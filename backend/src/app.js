@@ -7,6 +7,8 @@ const projectRoutes = require("./projects/project.routes");
 const sprintRoutes = require("./sprints/sprint.routes");
 const taskRoutes = require("./tasks/task.routes");
 const analyticsRoutes = require("./analytics/analytics.routes");
+const dashboardRoutes = require("./dashboard/dashboard.routes");
+const userAnalyticsRoutes = require("./analytics/user_analytics.routes");
 
 const app = express();
 
@@ -26,6 +28,8 @@ app.use("/projects", projectRoutes);
 app.use(sprintRoutes);
 app.use(taskRoutes);
 app.use(analyticsRoutes);
+app.use(dashboardRoutes);
+app.use(userAnalyticsRoutes);
 
 // Global error handler (MUST be last)
 app.use(errorHandler);

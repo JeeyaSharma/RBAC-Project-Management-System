@@ -131,7 +131,137 @@ const updateTaskStatus = async ({
   return updatedTask;
 };
 
+/**
+ * Get tasks for project (RBAC protected)
+ */
+const getProjectTasks = async ({
+  projectId,
+  userId,
+  status,
+  assigneeId
+}) => {
+  const membership =
+    await projectRepository.getUserRoleInProject(projectId, userId);
+
+  if (!membership) {
+    throw new ForbiddenError("Access denied");
+  }
+
+  return taskRepository.getTasksByProject({
+    projectId,
+    status,
+    assigneeId
+  });
+};
+
+/**
+ * Get tasks for sprint
+ */
+const getSprintTasks = async ({ projectId, sprintId, userId }) => {
+  const membership =
+    await projectRepository.getUserRoleInProject(projectId, userId);
+
+  if (!membership) {
+    throw new ForbiddenError("Access denied");
+  }
+
+  const sprint = await sprintRepository.getSprintById(sprintId);
+  if (!sprint || sprint.project_id !== projectId) {
+    throw new NotFoundError("Sprint not found");
+  }
+
+  return taskRepository.getTasksBySprint(sprintId);
+};
+
+/**
+ * Get single task details
+ */
+const getTaskById = async ({ taskId, userId }) => {
+  const task = await taskRepository.getTaskDetailById(taskId);
+  if (!task) {
+    throw new NotFoundError("Task not found");
+  }
+
+  const membership =
+    await projectRepository.getUserRoleInProject(task.project_id, userId);
+
+  if (!membership) {
+    throw new ForbiddenError("Access denied");
+  }
+
+  return task;
+};
+
+/**
+ * Update task details (RBAC protected)
+ */
+const updateTask = async ({
+  projectId,
+  taskId,
+  userId,
+  title,
+  description,
+  storyPoints,
+  assigneeId,
+  sprintId
+}) => {
+  // 1. Fetch task
+  const task = await taskRepository.getTaskById(taskId);
+  if (!task || task.project_id !== projectId) {
+    throw new NotFoundError("Task not found in this project");
+  }
+
+  // 2. RBAC check
+  const membership =
+    await projectRepository.getUserRoleInProject(projectId, userId);
+
+  if (
+    !membership ||
+    !["OWNER", "PROJECT_MANAGER", "DEVELOPER"].includes(membership.role)
+  ) {
+    throw new ForbiddenError(
+      "You do not have permission to update tasks"
+    );
+  }
+
+  // 3. Validate sprint move (if provided)
+  if (sprintId !== undefined) {
+    if (sprintId === null) {
+      // moving task back to backlog → allowed
+    } else {
+      const sprint = await sprintRepository.getSprintById(sprintId);
+      if (!sprint || sprint.project_id !== projectId) {
+        throw new AppError(
+          "Invalid sprint for this project",
+          400,
+          "INVALID_SPRINT"
+        );
+      }
+    }
+  }
+
+  // 4. Prepare fields
+  const updatedTask = await taskRepository.updateTask(taskId, {
+    title,
+    description,
+    story_points: storyPoints,
+    assignee_id: assigneeId,
+    sprint_id: sprintId
+  });
+
+  if (!updatedTask) {
+    throw new AppError("No fields to update", 400, "NO_UPDATES");
+  }
+
+  return updatedTask;
+};
+
+
 module.exports = {
   createTask,
-  updateTaskStatus
+  updateTaskStatus,
+  getProjectTasks,
+  getSprintTasks,
+  getTaskById,
+  updateTask
 };

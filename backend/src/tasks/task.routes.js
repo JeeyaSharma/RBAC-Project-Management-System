@@ -18,5 +18,33 @@ router.patch(
   taskController.updateTaskStatus
 );
 
+// Get tasks for project (with filters)
+router.get(
+  "/projects/:projectId/tasks",
+  authMiddleware,
+  taskController.getProjectTasks
+);
+
+// Get tasks for sprint
+router.get(
+  "/projects/:projectId/sprints/:sprintId/tasks",
+  authMiddleware,
+  taskController.getSprintTasks
+);
+
+// Get single task
+router.get(
+  "/tasks/:taskId",
+  authMiddleware,
+  taskController.getTaskById
+);
+
+// Update task details
+router.patch(
+  "/projects/:projectId/tasks/:taskId",
+  authMiddleware,
+  taskController.updateTask
+);
+
 
 module.exports = router;

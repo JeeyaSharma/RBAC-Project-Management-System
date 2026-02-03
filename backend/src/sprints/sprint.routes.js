@@ -11,4 +11,19 @@ router.post(
   sprintController.createSprint
 );
 
+// Start sprint
+router.patch(
+  "/projects/:projectId/sprints/:sprintId/start",
+  authMiddleware,
+  sprintController.startSprint
+);
+
+// Complete Sprint
+router.patch(
+  "/projects/:projectId/sprints/:sprintId/complete",
+  authMiddleware,
+  sprintController.completeSprint
+);
+
+
 module.exports = router;

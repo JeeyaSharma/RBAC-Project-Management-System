@@ -66,9 +66,26 @@ const getSprintById = async (sprintId) => {
   return result.rows[0] || null;
 };
 
+/**
+ * Update sprint status
+ */
+const updateSprintStatus = async (sprintId, status) => {
+  const query = `
+    UPDATE sprints
+    SET status = $1,
+        updated_at = NOW()
+    WHERE id = $2
+    RETURNING id, project_id, name, status, updated_at;
+  `;
+
+  const result = await pool.query(query, [status, sprintId]);
+  return result.rows[0] || null;
+};
+
 
 module.exports = {
   createSprint,
   hasActiveSprint,
-  getSprintById
+  getSprintById,
+  updateSprintStatus
 };

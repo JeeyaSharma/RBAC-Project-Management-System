@@ -33,6 +33,53 @@ const createSprint = async (req, res, next) => {
   }
 };
 
+/**
+ * PATCH /projects/:projectId/sprints/:sprintId/start
+ */
+const startSprint = async (req, res, next) => {
+  try {
+    const { projectId, sprintId } = req.params;
+
+    const sprint = await sprintService.startSprint({
+      projectId,
+      sprintId,
+      userId: req.user.id
+    });
+
+    return res.status(200).json({
+      message: "Sprint started successfully",
+      data: sprint
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PATCH /projects/:projectId/sprints/:sprintId/complete
+ */
+const completeSprint = async (req, res, next) => {
+  try {
+    const { projectId, sprintId } = req.params;
+
+    const sprint = await sprintService.completeSprint({
+      projectId,
+      sprintId,
+      userId: req.user.id
+    });
+
+    return res.status(200).json({
+      message: "Sprint completed successfully",
+      data: sprint
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 module.exports = {
-  createSprint
+  createSprint,
+  startSprint,
+  completeSprint
 };

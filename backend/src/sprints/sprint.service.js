@@ -61,6 +61,91 @@ const createSprint = async ({
   });
 };
 
+/**
+ * Start sprint
+ */
+const startSprint = async ({ projectId, sprintId, userId }) => {
+  // 1. Sprint must exist
+  const sprint = await sprintRepository.getSprintById(sprintId);
+  if (!sprint || sprint.project_id !== projectId) {
+    throw new NotFoundError("Sprint not found");
+  }
+
+  // 2. RBAC check
+  const membership =
+    await projectRepository.getUserRoleInProject(projectId, userId);
+
+  if (
+    !membership ||
+    !["OWNER", "PROJECT_MANAGER"].includes(membership.role)
+  ) {
+    throw new ForbiddenError(
+      "You do not have permission to start the sprint"
+    );
+  }
+
+  // 3. Sprint must be PLANNED
+  if (sprint.status !== "PLANNED") {
+    throw new AppError(
+      "Only planned sprints can be started",
+      400,
+      "INVALID_SPRINT_STATE"
+    );
+  }
+
+  // 4. Only one ACTIVE sprint per project
+  const hasActive = await sprintRepository.hasActiveSprint(projectId);
+  if (hasActive) {
+    throw new AppError(
+      "Another active sprint already exists",
+      409,
+      "ACTIVE_SPRINT_EXISTS"
+    );
+  }
+
+  // 5. Start sprint
+  return sprintRepository.updateSprintStatus(sprintId, "ACTIVE");
+};
+
+/**
+ * Complete sprint
+ */
+const completeSprint = async ({ projectId, sprintId, userId }) => {
+  // 1. Sprint must exist
+  const sprint = await sprintRepository.getSprintById(sprintId);
+  if (!sprint || sprint.project_id !== projectId) {
+    throw new NotFoundError("Sprint not found");
+  }
+
+  // 2. RBAC check
+  const membership =
+    await projectRepository.getUserRoleInProject(projectId, userId);
+
+  if (
+    !membership ||
+    !["OWNER", "PROJECT_MANAGER"].includes(membership.role)
+  ) {
+    throw new ForbiddenError(
+      "You do not have permission to complete the sprint"
+    );
+  }
+
+  // 3. Sprint must be ACTIVE
+  if (sprint.status !== "ACTIVE") {
+    throw new AppError(
+      "Only active sprints can be completed",
+      400,
+      "INVALID_SPRINT_STATE"
+    );
+  }
+
+  // 4. Complete sprint
+  return sprintRepository.updateSprintStatus(sprintId, "COMPLETED");
+};
+
+
 module.exports = {
-  createSprint
+  createSprint,
+  startSprint,
+  completeSprint
 };

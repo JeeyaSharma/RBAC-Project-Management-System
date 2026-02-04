@@ -1,6 +1,7 @@
 const pool = require("../config/db");
 const projectRepository = require("../repositories/project.repository");
 const { ForbiddenError, NotFoundError, AppError } = require("../common/errors");
+const { PROJECT_ROLES } = require("../constants/roles");
 
 /**
  * Create project + OWNER membership
@@ -23,6 +24,15 @@ const createProject = async ({ name, description, userId }) => {
       projectId: project.id,
       userId,
       role: "OWNER"
+    });
+
+    // Log
+    await activityLogService.logActivity({
+      projectId: project.id,
+      userId: ownerId,
+      entityType: "PROJECT",
+      entityId: project.id,
+      action: "CREATED"
     });
 
     await client.query("COMMIT");
@@ -66,7 +76,11 @@ const addProjectMember = async ({
 
   if (
     !requesterMembership ||
-    !["OWNER", "PROJECT_MANAGER"].includes(requesterMembership.role)
+    // !["OWNER", "PROJECT_MANAGER"].includes(requesterMembership.role)
+    ![
+      PROJECT_ROLES.OWNER,
+      PROJECT_ROLES.PROJECT_MANAGER
+    ].includes(role)
   ) {
     throw new ForbiddenError("You do not have permission to add members");
   }
@@ -84,10 +98,20 @@ const addProjectMember = async ({
   }
 
   // 4. Add member
-  await projectRepository.addProjectMember({
+  await projectRepository.addProjectMember(
     projectId,
-    userId: newUserId,
+    // userId: newUserId,
+    newUserId,
     role
+  );
+
+  await activityLogService.logActivity({
+    projectId,
+    userId: requesterId,
+    entityType: "MEMBER",
+    entityId: newUserId,
+    action: "ADDED",
+    metadata: { role }
   });
 };
 

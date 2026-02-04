@@ -1,0 +1,12 @@
+const SPRINT_STATUS = {
+  PLANNED: "PLANNED",
+  ACTIVE: "ACTIVE",
+  COMPLETED: "COMPLETED"
+};
+
+const SPRINT_STATUS_ARRAY = Object.values(SPRINT_STATUS);
+
+module.exports = {
+  SPRINT_STATUS,
+  SPRINT_STATUS_ARRAY
+};

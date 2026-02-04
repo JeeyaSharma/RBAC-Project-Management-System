@@ -1,6 +1,10 @@
 const express = require("express");
 const authMiddleware = require("../middlewares/auth.middleware");
 const taskController = require("./task.controller");
+const validate = require("../middlewares/validation.middleware");
+const {createTaskSchema,updateTaskStatusSchema,updateTaskSchema} = require("../validators/task.schema");
+const validate = require("../middlewares/validation.middleware");
+const {paginationQuerySchema} = require("../validators/pagination.schema");
 
 const router = express.Router();
 
@@ -8,6 +12,7 @@ const router = express.Router();
 router.post(
   "/projects/:projectId/tasks",
   authMiddleware,
+  validate(createTaskSchema),
   taskController.createTask
 );
 
@@ -15,6 +20,7 @@ router.post(
 router.patch(
   "/projects/:projectId/tasks/:taskId/status",
   authMiddleware,
+  validate(updateTaskStatusSchema),
   taskController.updateTaskStatus
 );
 
@@ -22,6 +28,7 @@ router.patch(
 router.get(
   "/projects/:projectId/tasks",
   authMiddleware,
+  validate(paginationQuerySchema, "query"),
   taskController.getProjectTasks
 );
 
@@ -29,6 +36,7 @@ router.get(
 router.get(
   "/projects/:projectId/sprints/:sprintId/tasks",
   authMiddleware,
+  validate(paginationQuerySchema, "query"),
   taskController.getSprintTasks
 );
 
@@ -43,6 +51,7 @@ router.get(
 router.patch(
   "/projects/:projectId/tasks/:taskId",
   authMiddleware,
+  validate(updateTaskSchema),
   taskController.updateTask
 );
 

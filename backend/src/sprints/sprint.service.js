@@ -1,6 +1,7 @@
 const sprintRepository = require("../repositories/sprint.repository");
 const projectRepository = require("../repositories/project.repository");
 const { ForbiddenError, NotFoundError, AppError } = require("../common/errors");
+const { PROJECT_ROLES } = require("../constants/roles");
 
 /**
  * Create sprint (RBAC protected)
@@ -25,7 +26,12 @@ const createSprint = async ({
 
   if (
     !membership ||
-    !["OWNER", "PROJECT_MANAGER"].includes(membership.role)
+    // !["OWNER", "PROJECT_MANAGER"].includes(membership.role)
+    ![
+      PROJECT_ROLES.OWNER,
+      PROJECT_ROLES.PROJECT_MANAGER
+    ].includes(membership.role)
+
   ) {
     throw new ForbiddenError(
       "You do not have permission to create a sprint"
@@ -77,7 +83,12 @@ const startSprint = async ({ projectId, sprintId, userId }) => {
 
   if (
     !membership ||
-    !["OWNER", "PROJECT_MANAGER"].includes(membership.role)
+    // !["OWNER", "PROJECT_MANAGER"].includes(membership.role)
+    ![
+      PROJECT_ROLES.OWNER,
+      PROJECT_ROLES.PROJECT_MANAGER
+    ].includes(membership.role)
+
   ) {
     throw new ForbiddenError(
       "You do not have permission to start the sprint"
@@ -123,7 +134,12 @@ const completeSprint = async ({ projectId, sprintId, userId }) => {
 
   if (
     !membership ||
-    !["OWNER", "PROJECT_MANAGER"].includes(membership.role)
+    // !["OWNER", "PROJECT_MANAGER"].includes(membership.role)
+    ![
+      PROJECT_ROLES.OWNER,
+      PROJECT_ROLES.PROJECT_MANAGER
+    ].includes(membership.role)
+
   ) {
     throw new ForbiddenError(
       "You do not have permission to complete the sprint"

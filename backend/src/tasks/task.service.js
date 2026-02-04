@@ -1,8 +1,10 @@
 const taskRepository = require("../repositories/task.repository");
 const projectRepository = require("../repositories/project.repository");
 const sprintRepository = require("../repositories/sprint.repository");
-const activityRepository = require("../repositories/activity.repository");
+const activityLogService = require("../logs/activityLog.service");
 const { ForbiddenError, NotFoundError, AppError } = require("../common/errors");
+const { PROJECT_ROLES } = require("../constants/roles");
+const {TASK_STATUS_ARRAY, TASK_INVALID_TRANSITIONS} = require("../constants/taskStatus");
 
 /**
  * Create task (RBAC protected)
@@ -28,7 +30,12 @@ const createTask = async ({
 
   if (
     !membership ||
-    !["OWNER", "PROJECT_MANAGER", "DEVELOPER"].includes(membership.role)
+    // !["OWNER", "PROJECT_MANAGER", "DEVELOPER"].includes(membership.role)
+    ![
+      PROJECT_ROLES.OWNER,
+      PROJECT_ROLES.PROJECT_MANAGER,
+      PROJECT_ROLES.DEVELOPER
+    ].includes(membership.role)
   ) {
     throw new ForbiddenError(
       "You do not have permission to create tasks"
@@ -49,7 +56,7 @@ const createTask = async ({
   }
 
   // 4. Create task
-  return taskRepository.createTask({
+  const task =  await taskRepository.createTask({
     projectId,
     sprintId,
     title,
@@ -58,6 +65,20 @@ const createTask = async ({
     assigneeId,
     createdBy: userId
   });
+
+  await activityLogService.logActivity({
+    projectId,
+    userId,
+    entityType: "TASK",
+    entityId: task.id,
+    action: "CREATED",
+    metadata: {
+      sprintId,
+      assigneeId
+    }
+  });
+
+  return task;
 };
 
 /**
@@ -89,10 +110,14 @@ const updateTaskStatus = async ({
   }
 
   // 3. Validate status
-  const allowedStatuses = ["TODO", "IN_PROGRESS", "DONE", "BLOCKED"];
-  if (!allowedStatuses.includes(newStatus)) {
+  // const allowedStatuses = ["TODO", "IN_PROGRESS", "DONE", "BLOCKED"];
+  // if (!allowedStatuses.includes(newStatus)) {
+  //   throw new AppError("Invalid task status", 400, "INVALID_STATUS");
+  // }
+  if (!TASK_STATUS_ARRAY.includes(newStatus)) {
     throw new AppError("Invalid task status", 400, "INVALID_STATUS");
   }
+
 
   // 4. Validate transition
   const invalidTransitions = {
@@ -116,7 +141,7 @@ const updateTaskStatus = async ({
     await taskRepository.updateTaskStatus(taskId, newStatus);
 
   // 6. Log activity
-  await activityRepository.logActivity({
+  await activityLogService.logActivity({
     projectId,
     userId,
     entityType: "TASK",
@@ -138,7 +163,9 @@ const getProjectTasks = async ({
   projectId,
   userId,
   status,
-  assigneeId
+  assigneeId,
+  page,
+  limit
 }) => {
   const membership =
     await projectRepository.getUserRoleInProject(projectId, userId);
@@ -146,7 +173,7 @@ const getProjectTasks = async ({
   if (!membership) {
     throw new ForbiddenError("Access denied");
   }
-
+  const offset = (page - 1) * limit;
   return taskRepository.getTasksByProject({
     projectId,
     status,
@@ -252,6 +279,21 @@ const updateTask = async ({
   if (!updatedTask) {
     throw new AppError("No fields to update", 400, "NO_UPDATES");
   }
+
+  await activityLogService.logActivity({
+    projectId,
+    userId,
+    entityType: "TASK",
+    entityId: taskId,
+    action: "UPDATED",
+    metadata: {
+      title,
+      description,
+      storyPoints,
+      assigneeId,
+      sprintId
+    }
+  });
 
   return updatedTask;
 };

@@ -1,0 +1,20 @@
+const TASK_STATUS = {
+  TODO: "TODO",
+  IN_PROGRESS: "IN_PROGRESS",
+  DONE: "DONE",
+  BLOCKED: "BLOCKED"
+};
+
+const TASK_STATUS_ARRAY = Object.values(TASK_STATUS);
+
+// Workflow rules (centralized)
+const TASK_INVALID_TRANSITIONS = {
+  [TASK_STATUS.DONE]: [TASK_STATUS.TODO],
+  [TASK_STATUS.TODO]: [TASK_STATUS.DONE]
+};
+
+module.exports = {
+  TASK_STATUS,
+  TASK_STATUS_ARRAY,
+  TASK_INVALID_TRANSITIONS
+};

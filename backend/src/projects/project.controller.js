@@ -65,6 +65,7 @@ const addProjectMember = async (req, res, next) => {
       newUserId: userId,
       role
     });
+    console.log("Service fn: ",projectService.addProjectMember);
 
     return res.status(201).json({
       message: "Project member added successfully"
@@ -73,7 +74,6 @@ const addProjectMember = async (req, res, next) => {
     next(error);
   }
 };
-
 
 module.exports = {
   createProject,

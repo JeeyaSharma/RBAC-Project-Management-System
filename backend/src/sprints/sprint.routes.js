@@ -1,6 +1,8 @@
 const express = require("express");
 const authMiddleware = require("../middlewares/auth.middleware");
 const sprintController = require("./sprint.controller");
+const validate = require("../middlewares/validation.middleware");
+const {createSprintSchema,startSprintSchema,completeSprintSchema} = require("../validators/sprint.schema");
 
 const router = express.Router();
 
@@ -8,6 +10,7 @@ const router = express.Router();
 router.post(
   "/projects/:projectId/sprints",
   authMiddleware,
+  validate(createSprintSchema),
   sprintController.createSprint
 );
 
@@ -15,6 +18,7 @@ router.post(
 router.patch(
   "/projects/:projectId/sprints/:sprintId/start",
   authMiddleware,
+  validate(startSprintSchema),
   sprintController.startSprint
 );
 
@@ -22,6 +26,7 @@ router.patch(
 router.patch(
   "/projects/:projectId/sprints/:sprintId/complete",
   authMiddleware,
+  validate(completeSprintSchema),
   sprintController.completeSprint
 );
 

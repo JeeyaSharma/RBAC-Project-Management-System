@@ -77,13 +77,16 @@ const updateTaskStatus = async (req, res, next) => {
 const getProjectTasks = async (req, res, next) => {
   try {
     const { projectId } = req.params;
+    const { page, limit } = req.query;
     const { status, assigneeId } = req.query;
 
     const tasks = await taskService.getProjectTasks({
       projectId,
       userId: req.user.id,
       status,
-      assigneeId
+      assigneeId,
+      page,
+      limit
     });
 
     return res.status(200).json({ data: tasks });

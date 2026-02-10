@@ -1,0 +1,25 @@
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'RBAC - Role Based Access Control',
+  description: 'Role based access control application',
+  icons: {
+    icon: '/logo.svg',
+    shortcut: '/logo.svg',
+    apple: '/logo.svg',
+  },
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body style={{ margin: 0, padding: 0 }}>
+        {children}
+      </body>
+    </html>
+  )
+}

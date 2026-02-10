@@ -2,6 +2,7 @@
 # Dependencies
 # ===============================
 node_modules/
+frontend/node_modules/
 
 # ===============================
 # Environment variables
@@ -21,6 +22,8 @@ node_modules/
 dist/
 build/
 coverage/
+frontend/.next/
+frontend/out/
 
 # ===============================
 # OS files

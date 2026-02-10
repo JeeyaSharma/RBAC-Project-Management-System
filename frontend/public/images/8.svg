@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+  <rect width="600" height="600" fill="#006eef"/>
+  <circle cx="300" cy="300" r="220" fill="#ffffff" opacity="0.2"/>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-size="48" font-family="Helvetica, Arial, sans-serif">Image 8</text>
+</svg>

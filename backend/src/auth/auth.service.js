@@ -8,27 +8,17 @@ const {
   AppError
 } = require("../common/errors");
 
-/**
- * Authenticate user and generate JWT
- * @param {string} email
- * @param {string} password
- * @returns {Object}
- */
 const login = async (email, password) => {
-  // 1. Fetch user by email
   const user = await userRepository.findByEmail(email);
 
   if (!user) {
-    // Do NOT reveal whether email exists
     throw new UnauthorizedError("Invalid email or password");
   }
 
-  // 2. Check if user is active
   if (!user.is_active) {
     throw new ForbiddenError("User account is inactive");
   }
 
-  // 3. Compare password
   const passwordMatch = await bcrypt.compare(
     password,
     user.password_hash
@@ -38,16 +28,13 @@ const login = async (email, password) => {
     throw new UnauthorizedError("Invalid email or password");
   }
 
-  // 4. Generate JWT
-  const payload = {
-    userId: user.id
-  };
+  const payload = { userId: user.id };
 
   const token = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "15m"
+    expiresIn: process.env.JWT_EXPIRES_IN || "15m",
+    algorithm: "HS256"
   });
 
-  // 5. Return safe response (NO password)
   return {
     token,
     user: {
@@ -58,9 +45,7 @@ const login = async (email, password) => {
   };
 };
 
-
 const signup = async (name, email, password) => {
-  // 1. Check if email already exists
   const existingUser = await userRepository.findByEmail(email);
 
   if (existingUser) {
@@ -71,10 +56,11 @@ const signup = async (name, email, password) => {
     );
   }
 
-  // 2. Hash password
-  const passwordHash = await bcrypt.hash(password, 10);
+  const saltRounds =
+    Number(process.env.BCRYPT_SALT_ROUNDS) || 10;
 
-  // 3. Create user
+  const passwordHash = await bcrypt.hash(password, saltRounds);
+
   const user = await userRepository.createUser({
     name,
     email,
@@ -82,8 +68,9 @@ const signup = async (name, email, password) => {
   });
 
   return {
-    message: "User registered successfully",
-    user
+    id: user.id,
+    name: user.name,
+    email: user.email
   };
 };
 

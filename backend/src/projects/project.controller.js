@@ -7,13 +7,6 @@ const createProject = async (req, res, next) => {
   try {
     const { name, description } = req.body;
 
-    if (!name) {
-      return res.status(400).json({
-        error: "INVALID_REQUEST",
-        message: "Project name is required"
-      });
-    }
-
     const project = await projectService.createProject({
       name,
       description,
@@ -21,7 +14,6 @@ const createProject = async (req, res, next) => {
     });
 
     return res.status(201).json({
-      message: "Project created successfully",
       data: project
     });
   } catch (error) {
@@ -52,23 +44,15 @@ const addProjectMember = async (req, res, next) => {
     const { projectId } = req.params;
     const { userId, role } = req.body;
 
-    if (!userId || !role) {
-      return res.status(400).json({
-        error: "INVALID_REQUEST",
-        message: "userId and role are required"
-      });
-    }
-
     await projectService.addProjectMember({
       projectId,
       requesterId: req.user.id,
       newUserId: userId,
       role
     });
-    console.log("Service fn: ",projectService.addProjectMember);
 
     return res.status(201).json({
-      message: "Project member added successfully"
+      data: { success: true }
     });
   } catch (error) {
     next(error);

@@ -8,13 +8,6 @@ const createSprint = async (req, res, next) => {
     const { projectId } = req.params;
     const { name, goal, startDate, endDate } = req.body;
 
-    if (!name) {
-      return res.status(400).json({
-        error: "INVALID_REQUEST",
-        message: "Sprint name is required"
-      });
-    }
-
     const sprint = await sprintService.createSprint({
       projectId,
       userId: req.user.id,
@@ -25,7 +18,6 @@ const createSprint = async (req, res, next) => {
     });
 
     return res.status(201).json({
-      message: "Sprint created successfully",
       data: sprint
     });
   } catch (error) {
@@ -47,7 +39,6 @@ const startSprint = async (req, res, next) => {
     });
 
     return res.status(200).json({
-      message: "Sprint started successfully",
       data: sprint
     });
   } catch (error) {
@@ -69,14 +60,12 @@ const completeSprint = async (req, res, next) => {
     });
 
     return res.status(200).json({
-      message: "Sprint completed successfully",
       data: sprint
     });
   } catch (error) {
     next(error);
   }
 };
-
 
 module.exports = {
   createSprint,

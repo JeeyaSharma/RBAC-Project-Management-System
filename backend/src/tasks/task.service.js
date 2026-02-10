@@ -1,10 +1,18 @@
+const pool = require("../config/db");
 const taskRepository = require("../repositories/task.repository");
 const projectRepository = require("../repositories/project.repository");
 const sprintRepository = require("../repositories/sprint.repository");
 const activityLogService = require("../logs/activityLog.service");
-const { ForbiddenError, NotFoundError, AppError } = require("../common/errors");
+const {
+  ForbiddenError,
+  NotFoundError,
+  AppError
+} = require("../common/errors");
 const { PROJECT_ROLES } = require("../constants/roles");
-const {TASK_STATUS_ARRAY, TASK_INVALID_TRANSITIONS} = require("../constants/taskStatus");
+const {
+  TASK_STATUS_ARRAY,
+  TASK_INVALID_TRANSITIONS
+} = require("../constants/taskStatus");
 
 /**
  * Create task (RBAC protected)
@@ -24,13 +32,12 @@ const createTask = async ({
     throw new NotFoundError("Project not found");
   }
 
-  // 2. User must be project member
+  // 2. RBAC check
   const membership =
     await projectRepository.getUserRoleInProject(projectId, userId);
 
   if (
     !membership ||
-    // !["OWNER", "PROJECT_MANAGER", "DEVELOPER"].includes(membership.role)
     ![
       PROJECT_ROLES.OWNER,
       PROJECT_ROLES.PROJECT_MANAGER,
@@ -45,7 +52,6 @@ const createTask = async ({
   // 3. Validate sprint (if provided)
   if (sprintId) {
     const sprint = await sprintRepository.getSprintById(sprintId);
-
     if (!sprint || sprint.project_id !== projectId) {
       throw new AppError(
         "Invalid sprint for this project",
@@ -56,7 +62,7 @@ const createTask = async ({
   }
 
   // 4. Create task
-  const task =  await taskRepository.createTask({
+  const task = await taskRepository.createTask({
     projectId,
     sprintId,
     title,
@@ -66,6 +72,7 @@ const createTask = async ({
     createdBy: userId
   });
 
+  // 5. Log activity
   await activityLogService.logActivity({
     projectId,
     userId,
@@ -82,7 +89,7 @@ const createTask = async ({
 };
 
 /**
- * Update task status (RBAC + workflow)
+ * Update task status (RBAC + workflow + transaction)
  */
 const updateTaskStatus = async ({
   projectId,
@@ -90,74 +97,88 @@ const updateTaskStatus = async ({
   userId,
   newStatus
 }) => {
-  // 1. Fetch task
-  const task = await taskRepository.getTaskById(taskId);
-  if (!task || task.project_id !== projectId) {
-    throw new NotFoundError("Task not found in this project");
-  }
+  const client = await pool.connect();
 
-  // 2. RBAC check
-  const membership =
-    await projectRepository.getUserRoleInProject(projectId, userId);
+  try {
+    await client.query("BEGIN");
 
-  if (
-    !membership ||
-    !["OWNER", "PROJECT_MANAGER", "DEVELOPER"].includes(membership.role)
-  ) {
-    throw new ForbiddenError(
-      "You do not have permission to update task status"
-    );
-  }
-
-  // 3. Validate status
-  // const allowedStatuses = ["TODO", "IN_PROGRESS", "DONE", "BLOCKED"];
-  // if (!allowedStatuses.includes(newStatus)) {
-  //   throw new AppError("Invalid task status", 400, "INVALID_STATUS");
-  // }
-  if (!TASK_STATUS_ARRAY.includes(newStatus)) {
-    throw new AppError("Invalid task status", 400, "INVALID_STATUS");
-  }
-
-
-  // 4. Validate transition
-  const invalidTransitions = {
-    DONE: ["TODO"],
-    TODO: ["DONE"]
-  };
-
-  if (
-    invalidTransitions[task.status] &&
-    invalidTransitions[task.status].includes(newStatus)
-  ) {
-    throw new AppError(
-      `Invalid status transition from ${task.status} to ${newStatus}`,
-      400,
-      "INVALID_TRANSITION"
-    );
-  }
-
-  // 5. Update status
-  const updatedTask =
-    await taskRepository.updateTaskStatus(taskId, newStatus);
-
-  // 6. Log activity
-  await activityLogService.logActivity({
-    projectId,
-    userId,
-    entityType: "TASK",
-    entityId: taskId,
-    action: "STATUS_UPDATED",
-    metadata: {
-      from: task.status,
-      to: newStatus
+    // 1. Fetch task
+    const task = await taskRepository.getTaskById(taskId, client);
+    if (!task || task.project_id !== projectId) {
+      throw new NotFoundError("Task not found in this project");
     }
-  });
 
-  return updatedTask;
+    // 2. RBAC check
+    const membership =
+      await projectRepository.getUserRoleInProject(projectId, userId);
+
+    if (
+      !membership ||
+      ![
+        PROJECT_ROLES.OWNER,
+        PROJECT_ROLES.PROJECT_MANAGER,
+        PROJECT_ROLES.DEVELOPER
+      ].includes(membership.role)
+    ) {
+      throw new ForbiddenError(
+        "You do not have permission to update task status"
+      );
+    }
+
+    // 3. Validate status
+    if (!TASK_STATUS_ARRAY.includes(newStatus)) {
+      throw new AppError(
+        "Invalid task status",
+        400,
+        "INVALID_STATUS"
+      );
+    }
+
+    // 4. Validate transition
+    if (
+      TASK_INVALID_TRANSITIONS[task.status] &&
+      TASK_INVALID_TRANSITIONS[task.status].includes(newStatus)
+    ) {
+      throw new AppError(
+        `Invalid status transition from ${task.status} to ${newStatus}`,
+        400,
+        "INVALID_TRANSITION"
+      );
+    }
+
+    // 5. Update status
+    const updatedTask =
+      await taskRepository.updateTaskStatus(
+        taskId,
+        newStatus,
+        client
+      );
+
+    // 6. Log activity
+    await activityLogService.logActivity({
+      projectId,
+      userId,
+      entityType: "TASK",
+      entityId: taskId,
+      action: "STATUS_UPDATED",
+      metadata: {
+        from: task.status,
+        to: newStatus
+      }
+    });
+
+    await client.query("COMMIT");
+    return updatedTask;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 /**
- * Get tasks for project (RBAC protected)
+ * Get tasks for project (with pagination)
  */
 const getProjectTasks = async ({
   projectId,
@@ -173,18 +194,31 @@ const getProjectTasks = async ({
   if (!membership) {
     throw new ForbiddenError("Access denied");
   }
-  const offset = (page - 1) * limit;
+
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(100, Number(limit) || 10);
+  const offset = (safePage - 1) * safeLimit;
+
   return taskRepository.getTasksByProject({
     projectId,
     status,
-    assigneeId
+    assigneeId,
+    limit: safeLimit,
+    offset,
+    page: safePage
   });
 };
 
 /**
- * Get tasks for sprint
+ * Get tasks for sprint (with pagination)
  */
-const getSprintTasks = async ({ projectId, sprintId, userId }) => {
+const getSprintTasks = async ({
+  projectId,
+  sprintId,
+  userId,
+  page,
+  limit
+}) => {
   const membership =
     await projectRepository.getUserRoleInProject(projectId, userId);
 
@@ -197,7 +231,16 @@ const getSprintTasks = async ({ projectId, sprintId, userId }) => {
     throw new NotFoundError("Sprint not found");
   }
 
-  return taskRepository.getTasksBySprint(sprintId);
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(100, Number(limit) || 10);
+  const offset = (safePage - 1) * safeLimit;
+
+  return taskRepository.getTasksBySprint({
+    sprintId,
+    limit: safeLimit,
+    offset,
+    page: safePage
+  });
 };
 
 /**
@@ -210,7 +253,10 @@ const getTaskById = async ({ taskId, userId }) => {
   }
 
   const membership =
-    await projectRepository.getUserRoleInProject(task.project_id, userId);
+    await projectRepository.getUserRoleInProject(
+      task.project_id,
+      userId
+    );
 
   if (!membership) {
     throw new ForbiddenError("Access denied");
@@ -244,7 +290,11 @@ const updateTask = async ({
 
   if (
     !membership ||
-    !["OWNER", "PROJECT_MANAGER", "DEVELOPER"].includes(membership.role)
+    ![
+      PROJECT_ROLES.OWNER,
+      PROJECT_ROLES.PROJECT_MANAGER,
+      PROJECT_ROLES.DEVELOPER
+    ].includes(membership.role)
   ) {
     throw new ForbiddenError(
       "You do not have permission to update tasks"
@@ -252,22 +302,18 @@ const updateTask = async ({
   }
 
   // 3. Validate sprint move (if provided)
-  if (sprintId !== undefined) {
-    if (sprintId === null) {
-      // moving task back to backlog → allowed
-    } else {
-      const sprint = await sprintRepository.getSprintById(sprintId);
-      if (!sprint || sprint.project_id !== projectId) {
-        throw new AppError(
-          "Invalid sprint for this project",
-          400,
-          "INVALID_SPRINT"
-        );
-      }
+  if (sprintId !== undefined && sprintId !== null) {
+    const sprint = await sprintRepository.getSprintById(sprintId);
+    if (!sprint || sprint.project_id !== projectId) {
+      throw new AppError(
+        "Invalid sprint for this project",
+        400,
+        "INVALID_SPRINT"
+      );
     }
   }
 
-  // 4. Prepare fields
+  // 4. Update task
   const updatedTask = await taskRepository.updateTask(taskId, {
     title,
     description,
@@ -280,6 +326,7 @@ const updateTask = async ({
     throw new AppError("No fields to update", 400, "NO_UPDATES");
   }
 
+  // 5. Log activity
   await activityLogService.logActivity({
     projectId,
     userId,
@@ -297,7 +344,6 @@ const updateTask = async ({
 
   return updatedTask;
 };
-
 
 module.exports = {
   createTask,

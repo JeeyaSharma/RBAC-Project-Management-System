@@ -1,25 +1,38 @@
+const pool = require("../config/db");
 const activityLogRepository = require("./activityLog.repository");
 
-const logActivity = async ({
-  projectId,
-  userId,
-  entityType,
-  entityId,
-  action,
-  metadata
-}) => {
-  // Fail-safe: logging must NEVER break main flow
+/**
+ * Log activity (fail-safe, transaction-aware)
+ */
+const logActivity = async (
+  {
+    projectId,
+    userId,
+    entityType,
+    entityId,
+    action,
+    metadata
+  },
+  client = pool
+) => {
+  // Logging must NEVER break main flow
   try {
-    await activityLogRepository.createActivityLog({
-      projectId,
-      userId,
-      entityType,
-      entityId,
-      action,
-      metadata
-    });
+    await activityLogRepository.createActivityLog(
+      {
+        projectId,
+        userId,
+        entityType,
+        entityId,
+        action,
+        metadata
+      },
+      client
+    );
   } catch (error) {
-    console.error("Activity log failed:", error.message);
+    console.error(
+      "Activity log failed:",
+      error.message
+    );
   }
 };
 

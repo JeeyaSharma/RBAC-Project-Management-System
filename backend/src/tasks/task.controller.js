@@ -14,13 +14,6 @@ const createTask = async (req, res, next) => {
       assigneeId
     } = req.body;
 
-    if (!title) {
-      return res.status(400).json({
-        error: "INVALID_REQUEST",
-        message: "Task title is required"
-      });
-    }
-
     const task = await taskService.createTask({
       projectId,
       userId: req.user.id,
@@ -32,7 +25,6 @@ const createTask = async (req, res, next) => {
     });
 
     return res.status(201).json({
-      message: "Task created successfully",
       data: task
     });
   } catch (error) {
@@ -48,13 +40,6 @@ const updateTaskStatus = async (req, res, next) => {
     const { projectId, taskId } = req.params;
     const { status } = req.body;
 
-    if (!status) {
-      return res.status(400).json({
-        error: "INVALID_REQUEST",
-        message: "Status is required"
-      });
-    }
-
     const updatedTask = await taskService.updateTaskStatus({
       projectId,
       taskId,
@@ -63,7 +48,6 @@ const updateTaskStatus = async (req, res, next) => {
     });
 
     return res.status(200).json({
-      message: "Task status updated successfully",
       data: updatedTask
     });
   } catch (error) {
@@ -77,10 +61,9 @@ const updateTaskStatus = async (req, res, next) => {
 const getProjectTasks = async (req, res, next) => {
   try {
     const { projectId } = req.params;
-    const { page, limit } = req.query;
-    const { status, assigneeId } = req.query;
+    const { status, assigneeId, page, limit } = req.query;
 
-    const tasks = await taskService.getProjectTasks({
+    const result = await taskService.getProjectTasks({
       projectId,
       userId: req.user.id,
       status,
@@ -89,7 +72,7 @@ const getProjectTasks = async (req, res, next) => {
       limit
     });
 
-    return res.status(200).json({ data: tasks });
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -101,14 +84,17 @@ const getProjectTasks = async (req, res, next) => {
 const getSprintTasks = async (req, res, next) => {
   try {
     const { projectId, sprintId } = req.params;
+    const { page, limit } = req.query;
 
-    const tasks = await taskService.getSprintTasks({
+    const result = await taskService.getSprintTasks({
       projectId,
       sprintId,
-      userId: req.user.id
+      userId: req.user.id,
+      page,
+      limit
     });
 
-    return res.status(200).json({ data: tasks });
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -126,7 +112,9 @@ const getTaskById = async (req, res, next) => {
       userId: req.user.id
     });
 
-    return res.status(200).json({ data: task });
+    return res.status(200).json({
+      data: task
+    });
   } catch (error) {
     next(error);
   }
@@ -158,14 +146,12 @@ const updateTask = async (req, res, next) => {
     });
 
     return res.status(200).json({
-      message: "Task updated successfully",
       data: task
     });
   } catch (error) {
     next(error);
   }
 };
-
 
 module.exports = {
   createTask,

@@ -1,5 +1,7 @@
+const pool = require("../config/db");
 const sprintRepository = require("../repositories/sprint.repository");
 const projectRepository = require("../repositories/project.repository");
+const activityLogService = require("../logs/activityLog.service");
 const { ForbiddenError, NotFoundError, AppError } = require("../common/errors");
 const { PROJECT_ROLES } = require("../constants/roles");
 
@@ -26,19 +28,16 @@ const createSprint = async ({
 
   if (
     !membership ||
-    // !["OWNER", "PROJECT_MANAGER"].includes(membership.role)
-    ![
-      PROJECT_ROLES.OWNER,
-      PROJECT_ROLES.PROJECT_MANAGER
-    ].includes(membership.role)
-
+    ![PROJECT_ROLES.OWNER, PROJECT_ROLES.PROJECT_MANAGER].includes(
+      membership.role
+    )
   ) {
     throw new ForbiddenError(
       "You do not have permission to create a sprint"
     );
   }
 
-  // 3. Date validation (if provided)
+  // 3. Date validation
   if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
     throw new AppError(
       "Sprint start date cannot be after end date",
@@ -47,7 +46,7 @@ const createSprint = async ({
     );
   }
 
-  // 4. Agile rule: only one ACTIVE sprint
+  // 4. Only one ACTIVE sprint
   const hasActive = await sprintRepository.hasActiveSprint(projectId);
   if (hasActive) {
     throw new AppError(
@@ -58,107 +57,154 @@ const createSprint = async ({
   }
 
   // 5. Create sprint
-  return sprintRepository.createSprint({
+  const sprint = await sprintRepository.createSprint({
     projectId,
     name,
     goal,
     startDate,
     endDate
   });
+
+  // 6. Log activity
+  await activityLogService.logActivity({
+    projectId,
+    userId,
+    entityType: "SPRINT",
+    entityId: sprint.id,
+    action: "CREATED"
+  });
+
+  return sprint;
 };
 
 /**
- * Start sprint
+ * Start sprint (transactional)
  */
 const startSprint = async ({ projectId, sprintId, userId }) => {
-  // 1. Sprint must exist
-  const sprint = await sprintRepository.getSprintById(sprintId);
-  if (!sprint || sprint.project_id !== projectId) {
-    throw new NotFoundError("Sprint not found");
-  }
+  const client = await pool.connect();
 
-  // 2. RBAC check
-  const membership =
-    await projectRepository.getUserRoleInProject(projectId, userId);
+  try {
+    await client.query("BEGIN");
 
-  if (
-    !membership ||
-    // !["OWNER", "PROJECT_MANAGER"].includes(membership.role)
-    ![
-      PROJECT_ROLES.OWNER,
-      PROJECT_ROLES.PROJECT_MANAGER
-    ].includes(membership.role)
+    const sprint = await sprintRepository.getSprintById(sprintId);
+    if (!sprint || sprint.project_id !== projectId) {
+      throw new NotFoundError("Sprint not found");
+    }
 
-  ) {
-    throw new ForbiddenError(
-      "You do not have permission to start the sprint"
+    const membership =
+      await projectRepository.getUserRoleInProject(projectId, userId);
+
+    if (
+      !membership ||
+      ![PROJECT_ROLES.OWNER, PROJECT_ROLES.PROJECT_MANAGER].includes(
+        membership.role
+      )
+    ) {
+      throw new ForbiddenError(
+        "You do not have permission to start the sprint"
+      );
+    }
+
+    if (sprint.status !== "PLANNED") {
+      throw new AppError(
+        "Only planned sprints can be started",
+        400,
+        "INVALID_SPRINT_STATE"
+      );
+    }
+
+    const hasActive = await sprintRepository.hasActiveSprint(projectId, client);
+    if (hasActive) {
+      throw new AppError(
+        "Another active sprint already exists",
+        409,
+        "ACTIVE_SPRINT_EXISTS"
+      );
+    }
+
+    const updated = await sprintRepository.updateSprintStatus(
+      sprintId,
+      "ACTIVE",
+      client
     );
-  }
 
-  // 3. Sprint must be PLANNED
-  if (sprint.status !== "PLANNED") {
-    throw new AppError(
-      "Only planned sprints can be started",
-      400,
-      "INVALID_SPRINT_STATE"
-    );
-  }
+    await activityLogService.logActivity({
+      projectId,
+      userId,
+      entityType: "SPRINT",
+      entityId: sprintId,
+      action: "STARTED"
+    });
 
-  // 4. Only one ACTIVE sprint per project
-  const hasActive = await sprintRepository.hasActiveSprint(projectId);
-  if (hasActive) {
-    throw new AppError(
-      "Another active sprint already exists",
-      409,
-      "ACTIVE_SPRINT_EXISTS"
-    );
+    await client.query("COMMIT");
+    return updated;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
-
-  // 5. Start sprint
-  return sprintRepository.updateSprintStatus(sprintId, "ACTIVE");
 };
 
 /**
- * Complete sprint
+ * Complete sprint (transactional)
  */
 const completeSprint = async ({ projectId, sprintId, userId }) => {
-  // 1. Sprint must exist
-  const sprint = await sprintRepository.getSprintById(sprintId);
-  if (!sprint || sprint.project_id !== projectId) {
-    throw new NotFoundError("Sprint not found");
-  }
+  const client = await pool.connect();
 
-  // 2. RBAC check
-  const membership =
-    await projectRepository.getUserRoleInProject(projectId, userId);
+  try {
+    await client.query("BEGIN");
 
-  if (
-    !membership ||
-    // !["OWNER", "PROJECT_MANAGER"].includes(membership.role)
-    ![
-      PROJECT_ROLES.OWNER,
-      PROJECT_ROLES.PROJECT_MANAGER
-    ].includes(membership.role)
+    const sprint = await sprintRepository.getSprintById(sprintId);
+    if (!sprint || sprint.project_id !== projectId) {
+      throw new NotFoundError("Sprint not found");
+    }
 
-  ) {
-    throw new ForbiddenError(
-      "You do not have permission to complete the sprint"
+    const membership =
+      await projectRepository.getUserRoleInProject(projectId, userId);
+
+    if (
+      !membership ||
+      ![PROJECT_ROLES.OWNER, PROJECT_ROLES.PROJECT_MANAGER].includes(
+        membership.role
+      )
+    ) {
+      throw new ForbiddenError(
+        "You do not have permission to complete the sprint"
+      );
+    }
+
+    if (sprint.status !== "ACTIVE") {
+      throw new AppError(
+        "Only active sprints can be completed",
+        400,
+        "INVALID_SPRINT_STATE"
+      );
+    }
+
+    const updated = await sprintRepository.updateSprintStatus(
+      sprintId,
+      "COMPLETED",
+      client
     );
-  }
 
-  // 3. Sprint must be ACTIVE
-  if (sprint.status !== "ACTIVE") {
-    throw new AppError(
-      "Only active sprints can be completed",
-      400,
-      "INVALID_SPRINT_STATE"
-    );
-  }
+    await activityLogService.logActivity({
+      projectId,
+      userId,
+      entityType: "SPRINT",
+      entityId: sprintId,
+      action: "COMPLETED"
+    });
 
-  // 4. Complete sprint
-  return sprintRepository.updateSprintStatus(sprintId, "COMPLETED");
+    await client.query("COMMIT");
+    return updated;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 };
-
 
 module.exports = {
   createSprint,

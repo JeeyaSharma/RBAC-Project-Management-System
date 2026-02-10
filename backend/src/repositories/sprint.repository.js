@@ -3,7 +3,10 @@ const pool = require("../config/db");
 /**
  * Create sprint
  */
-const createSprint = async ({ projectId, name, goal, startDate, endDate }) => {
+const createSprint = async (
+  { projectId, name, goal, startDate, endDate },
+  client = pool
+) => {
   const query = `
     INSERT INTO sprints (
       project_id,
@@ -33,14 +36,14 @@ const createSprint = async ({ projectId, name, goal, startDate, endDate }) => {
     endDate || null
   ];
 
-  const result = await pool.query(query, values);
+  const result = await client.query(query, values);
   return result.rows[0];
 };
 
 /**
  * Check if an active sprint already exists
  */
-const hasActiveSprint = async (projectId) => {
+const hasActiveSprint = async (projectId, client = pool) => {
   const query = `
     SELECT 1
     FROM sprints
@@ -48,28 +51,32 @@ const hasActiveSprint = async (projectId) => {
     LIMIT 1;
   `;
 
-  const result = await pool.query(query, [projectId]);
+  const result = await client.query(query, [projectId]);
   return result.rows.length > 0;
 };
 
 /**
  * Get sprint by ID
  */
-const getSprintById = async (sprintId) => {
+const getSprintById = async (sprintId, client = pool) => {
   const query = `
     SELECT id, project_id, status
     FROM sprints
     WHERE id = $1;
   `;
 
-  const result = await pool.query(query, [sprintId]);
+  const result = await client.query(query, [sprintId]);
   return result.rows[0] || null;
 };
 
 /**
  * Update sprint status
  */
-const updateSprintStatus = async (sprintId, status) => {
+const updateSprintStatus = async (
+  sprintId,
+  status,
+  client = pool
+) => {
   const query = `
     UPDATE sprints
     SET status = $1,
@@ -78,10 +85,9 @@ const updateSprintStatus = async (sprintId, status) => {
     RETURNING id, project_id, name, status, updated_at;
   `;
 
-  const result = await pool.query(query, [status, sprintId]);
+  const result = await client.query(query, [status, sprintId]);
   return result.rows[0] || null;
 };
-
 
 module.exports = {
   createSprint,

@@ -3,7 +3,6 @@ const authMiddleware = require("../middlewares/auth.middleware");
 const taskController = require("./task.controller");
 const validate = require("../middlewares/validation.middleware");
 const {createTaskSchema,updateTaskStatusSchema,updateTaskSchema} = require("../validators/task.schema");
-const validate = require("../middlewares/validation.middleware");
 const {paginationQuerySchema} = require("../validators/pagination.schema");
 
 const router = express.Router();

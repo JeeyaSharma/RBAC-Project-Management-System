@@ -19,14 +19,26 @@ const createProject = async (client, { name, description, createdBy }) => {
 /**
  * Add project member (RBAC)
  */
-const addProjectMember = async (projectId, userId, role ) => {
+// const addProjectMember = async (projectId, userId, role ) => {
+//   const query = `
+//     INSERT INTO project_members (project_id, user_id, role)
+//     VALUES ($1, $2, $3);
+//   `;
+
+//   await pool.query(query, [projectId, userId, role]);
+// };
+/**
+ * Add project member (RBAC)
+ */
+const addProjectMember = async (client, { projectId, userId, role }) => {
   const query = `
     INSERT INTO project_members (project_id, user_id, role)
     VALUES ($1, $2, $3);
   `;
 
-  await pool.query(query, [projectId, userId, role]);
+  await client.query(query, [projectId, userId, role]);
 };
+
 
 /**
  * Get all projects for a user (RBAC-based)

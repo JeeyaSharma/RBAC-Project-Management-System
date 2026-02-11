@@ -16,7 +16,7 @@ export default function Home() {
       <section style={styles.section1} id="section1">
         <div style={styles.section1Header}>
           <Image
-            src="/logo.svg"
+            src="/images/favicon.png"
             alt="SprintOps Logo"
             width={40}
             height={40}
@@ -49,7 +49,7 @@ export default function Home() {
           </div>
           <div style={styles.section1Right}>
             <Image
-              src="/images/1.svg"
+              src="/images/1.png"
               alt="Project management"
               width={350}
               height={350}
@@ -64,7 +64,7 @@ export default function Home() {
         <div style={styles.section2Content}>
           <div style={styles.section2Left}>
             <Image
-              src="/images/2.svg"
+              src="/images/2.png"
               alt="Project icons"
               width={300}
               height={300}
@@ -119,7 +119,7 @@ export default function Home() {
           </div>
           <div style={styles.section3Right}>
             <Image
-              src="/images/3.svg"
+              src="/images/3.png"
               alt="Digital presence"
               width={350}
               height={280}
@@ -135,7 +135,7 @@ export default function Home() {
         <div style={styles.section4Grid}>
           <div style={styles.section4Card}>
             <Image
-              src="/images/4.svg"
+              src="/images/4.png"
               alt="Data-driven strategies"
               width={180}
               height={180}
@@ -146,7 +146,7 @@ export default function Home() {
 
           <div style={styles.section4Card}>
             <Image
-              src="/images/5.svg"
+              src="/images/5.png"
               alt="Monitoring dashboards"
               width={180}
               height={180}
@@ -157,7 +157,7 @@ export default function Home() {
 
           <div style={styles.section4Card}>
             <Image
-              src="/images/6.svg"
+              src="/images/6.png"
               alt="Dedicated teams"
               width={180}
               height={180}
@@ -179,7 +179,7 @@ export default function Home() {
           </div>
           <div style={styles.section5Right}>
             <Image
-              src="/images/7.svg"
+              src="/images/7.png"
               alt="Digital world"
               width={400}
               height={400}
@@ -194,7 +194,7 @@ export default function Home() {
         <div style={styles.section6Content}>
           <div style={styles.section6Left}>
             <Image
-              src="/images/8.svg"
+              src="/images/8.png"
               alt="Contact us"
               width={300}
               height={300}

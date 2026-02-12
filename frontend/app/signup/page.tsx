@@ -173,8 +173,8 @@ export default function SignupPage() {
         }
 
         .auth-card {
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          background: var(--auth-card);
+          border: 1px solid var(--auth-border);
           border-radius: 20px;
           padding: 28px;
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
@@ -239,7 +239,7 @@ const styles = {
     margin: 0,
     padding: 0,
     minHeight: '100vh',
-    backgroundColor: '#006eef',
+    backgroundColor: 'var(--auth-bg)',
     overflowX: 'hidden' as const,
   } as React.CSSProperties,
 
@@ -275,7 +275,7 @@ const styles = {
   backLink: {
     fontFamily: 'Helvetica, Arial, sans-serif',
     fontSize: '0.95rem',
-    color: '#fff',
+    color: 'var(--auth-text)',
     textDecoration: 'none',
     display: 'inline-flex',
     alignItems: 'center',
@@ -289,13 +289,13 @@ const styles = {
     fontSize: '3rem',
     fontWeight: '400',
     margin: '0 0 10px 0',
-    color: '#fff',
+    color: 'var(--auth-text)',
   } as React.CSSProperties,
 
   subtitle: {
     fontFamily: 'Helvetica, Arial, sans-serif',
     fontSize: '1rem',
-    color: '#fff',
+    color: 'var(--auth-text)',
     margin: '0 0 30px 0',
     opacity: 0.9,
   } as React.CSSProperties,
@@ -317,17 +317,17 @@ const styles = {
     fontFamily: 'Helvetica, Arial, sans-serif',
     fontSize: '0.9rem',
     fontWeight: 'bold',
-    color: '#fff',
+    color: 'var(--auth-text)',
   } as React.CSSProperties,
 
   input: {
     fontFamily: 'Helvetica, Arial, sans-serif',
     padding: '12px 16px',
     fontSize: '1rem',
-    border: '2px solid #fff',
+    border: '2px solid var(--auth-input-border)',
     borderRadius: '8px',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    color: '#fff',
+    backgroundColor: 'var(--auth-input-bg)',
+    color: 'var(--auth-text)',
     outline: 'none',
     transition: 'all 0.3s ease',
   } as React.CSSProperties,
@@ -346,8 +346,8 @@ const styles = {
     fontSize: '1rem',
     fontWeight: 'bold',
     border: 'none',
-    backgroundColor: '#fff',
-    color: '#006eef',
+    backgroundColor: '#ffffff',
+    color: '#0b3b8f',
     borderRadius: '8px',
     cursor: 'pointer',
     transition: 'all 0.3s ease',
@@ -356,13 +356,13 @@ const styles = {
   switchText: {
     fontFamily: 'Helvetica, Arial, sans-serif',
     fontSize: '0.9rem',
-    color: '#fff',
+    color: 'var(--auth-text)',
     textAlign: 'center' as const,
     margin: '0',
   } as React.CSSProperties,
 
   switchLink: {
-    color: '#fff',
+    color: 'var(--auth-text)',
     textDecoration: 'underline',
     fontWeight: 'bold',
   } as React.CSSProperties,

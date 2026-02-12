@@ -36,12 +36,12 @@ export default function Home() {
               style={styles.learnMoreBtn}
               onClick={() => scrollToSection('section2')}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#000'
-                e.currentTarget.style.color = '#fff'
+                e.currentTarget.style.backgroundColor = 'var(--btn-hover-bg)'
+                e.currentTarget.style.color = 'var(--btn-hover-text)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.color = '#000'
+                e.currentTarget.style.color = 'var(--btn-text)'
               }}
             >
               Learn more
@@ -179,12 +179,12 @@ export default function Home() {
               style={styles.workWithUsBtn}
               onClick={() => scrollToSection('section6')}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#000'
-                e.currentTarget.style.color = '#fff'
+                e.currentTarget.style.backgroundColor = 'var(--btn-hover-bg)'
+                e.currentTarget.style.color = 'var(--btn-hover-text)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.color = '#000'
+                e.currentTarget.style.color = 'var(--btn-text)'
               }}
             >
               Work with us
@@ -241,7 +241,7 @@ export default function Home() {
 const styles = {
   // Section 1
   section1: {
-    backgroundColor: '#edeced',
+    backgroundColor: 'var(--section1-bg)',
     padding: '0',
     minHeight: '100vh',
     display: 'flex',
@@ -262,7 +262,7 @@ const styles = {
     fontFamily: 'Helvetica, Arial, sans-serif',
     fontSize: '1.3rem',
     fontWeight: 'bold',
-    color: '#000',
+    color: 'var(--section1-text)',
   } as React.CSSProperties,
 
   section1Content: {
@@ -293,7 +293,7 @@ const styles = {
     fontSize: '4.5rem',
     fontWeight: '400',
     margin: '0',
-    color: '#000',
+    color: 'var(--section1-text)',
     lineHeight: '1.2',
   } as React.CSSProperties,
 
@@ -305,16 +305,16 @@ const styles = {
     fontFamily: 'Helvetica, Arial, sans-serif',
     fontSize: '1.2rem',
     margin: '20px 0 0 0',
-    color: '#000',
+    color: 'var(--section1-text)',
   } as React.CSSProperties,
 
   learnMoreBtn: {
     fontFamily: 'Helvetica, Arial, sans-serif',
     padding: '12px 40px',
     fontSize: '1rem',
-    border: '2px solid #000',
+    border: '2px solid var(--btn-border)',
     backgroundColor: 'transparent',
-    color: '#000',
+    color: 'var(--btn-text)',
     borderRadius: '30px',
     cursor: 'pointer',
     width: 'fit-content',
@@ -324,8 +324,8 @@ const styles = {
 
   // Section 2
   section2: {
-    backgroundColor: '#000',
-    color: '#fff',
+    backgroundColor: 'var(--section2-bg)',
+    color: 'var(--section2-text)',
     padding: '80px 40px',
     minHeight: '100vh',
     display: 'flex',
@@ -357,7 +357,7 @@ const styles = {
     fontSize: '3.5rem',
     fontWeight: '400',
     margin: '0 0 60px 0',
-    color: '#fff',
+    color: 'var(--section2-text)',
     lineHeight: '1.2',
   } as React.CSSProperties,
 
@@ -372,21 +372,21 @@ const styles = {
     fontSize: '1.3rem',
     fontWeight: 'bold',
     margin: '0 0 10px 0',
-    color: '#fff',
+    color: 'var(--section2-text)',
   } as React.CSSProperties,
 
   section2CardText: {
     fontFamily: 'Helvetica, Arial, sans-serif',
     fontSize: '1rem',
     margin: '0',
-    color: '#ddd',
+    color: 'var(--section2-muted)',
     lineHeight: '1.6',
   } as React.CSSProperties,
 
   // Section 3
   section3: {
-    backgroundColor: '#006eef',
-    color: '#fff',
+    backgroundColor: 'var(--section3-bg)',
+    color: 'var(--section3-text)',
     padding: '80px 40px',
     minHeight: '100vh',
     display: 'flex',
@@ -418,7 +418,7 @@ const styles = {
     fontSize: '4rem',
     fontWeight: '400',
     margin: '0 0 30px 0',
-    color: '#fff',
+    color: 'var(--section3-text)',
     lineHeight: '1.2',
   } as React.CSSProperties,
 
@@ -426,13 +426,13 @@ const styles = {
     fontFamily: 'Helvetica, Arial, sans-serif',
     fontSize: '1.2rem',
     margin: '0',
-    color: '#fff',
+    color: 'var(--section3-text)',
     lineHeight: '1.6',
   } as React.CSSProperties,
 
   // Section 4
   section4: {
-    backgroundColor: '#feffff',
+    backgroundColor: 'var(--section4-bg)',
     padding: '80px 40px',
     minHeight: '100vh',
     display: 'flex',
@@ -446,7 +446,7 @@ const styles = {
     fontSize: '3.5rem',
     fontWeight: '400',
     margin: '0 0 80px 0',
-    color: '#000',
+    color: 'var(--section4-text)',
     textAlign: 'center',
   } as React.CSSProperties,
 
@@ -459,11 +459,12 @@ const styles = {
   } as React.CSSProperties,
 
   section4Card: {
-    backgroundColor: '#fff',
+    backgroundColor: 'var(--card-surface)',
     borderRadius: '25px',
     padding: '50px 40px',
     textAlign: 'center',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+    border: '1px solid var(--card-border)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -473,13 +474,13 @@ const styles = {
     fontFamily: 'Helvetica, Arial, sans-serif',
     fontSize: '1.3rem',
     fontWeight: 'bold',
-    color: '#000',
+    color: 'var(--section4-text)',
     margin: '0',
   } as React.CSSProperties,
 
   // Section 5
   section5: {
-    backgroundColor: '#edeced',
+    backgroundColor: 'var(--section5-bg)',
     padding: '80px 40px',
     minHeight: '100vh',
     display: 'flex',
@@ -513,7 +514,7 @@ const styles = {
     fontSize: '4rem',
     fontWeight: '400',
     margin: '0',
-    color: '#000',
+    color: 'var(--section5-text)',
     lineHeight: '1.2',
   } as React.CSSProperties,
 
@@ -521,9 +522,9 @@ const styles = {
     fontFamily: 'Helvetica, Arial, sans-serif',
     padding: '12px 40px',
     fontSize: '1rem',
-    border: '2px solid #000',
+    border: '2px solid var(--btn-border)',
     backgroundColor: 'transparent',
-    color: '#000',
+    color: 'var(--btn-text)',
     borderRadius: '30px',
     cursor: 'pointer',
     width: 'fit-content',
@@ -532,8 +533,8 @@ const styles = {
 
   // Section 6
   section6: {
-    backgroundColor: '#006eef',
-    color: '#fff',
+    backgroundColor: 'var(--section6-bg)',
+    color: 'var(--section6-text)',
     padding: '80px 40px',
     minHeight: '100vh',
     display: 'flex',
@@ -565,13 +566,13 @@ const styles = {
     fontSize: '4rem',
     fontWeight: '400',
     margin: '0 0 10px 0',
-    color: '#fff',
+    color: 'var(--section6-text)',
   } as React.CSSProperties,
 
   section6Subtitle: {
     fontFamily: 'Helvetica, Arial, sans-serif',
     fontSize: '1.1rem',
-    color: '#fff',
+    color: 'var(--section6-text)',
     margin: '0 0 40px 0',
     lineHeight: '1.6',
   } as React.CSSProperties,
@@ -583,12 +584,12 @@ const styles = {
   } as React.CSSProperties,
 
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    border: '2px solid #fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    border: '2px solid var(--section6-text)',
     borderRadius: '16px',
     padding: '32px 24px',
     textDecoration: 'none',
-    color: '#fff',
+    color: 'var(--section6-text)',
     transition: 'all 0.3s ease',
     display: 'flex',
     flexDirection: 'column' as const,
@@ -601,14 +602,14 @@ const styles = {
     fontSize: '1.4rem',
     fontWeight: 'bold',
     margin: '0',
-    color: '#fff',
+    color: 'var(--section6-text)',
   } as React.CSSProperties,
 
   cardText: {
     fontFamily: 'Helvetica, Arial, sans-serif',
     fontSize: '0.95rem',
     margin: '0',
-    color: '#fff',
+    color: 'var(--section6-text)',
     opacity: 0.9,
     lineHeight: '1.5',
   } as React.CSSProperties,
@@ -618,9 +619,9 @@ const styles = {
     padding: '10px 24px',
     fontSize: '0.95rem',
     fontWeight: 'bold',
-    border: '2px solid #fff',
+    border: '2px solid var(--section6-text)',
     backgroundColor: 'transparent',
-    color: '#fff',
+    color: 'var(--section6-text)',
     borderRadius: '8px',
     cursor: 'pointer',
     transition: 'all 0.3s ease',

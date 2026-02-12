@@ -175,7 +175,20 @@ export default function Home() {
             <h2 style={styles.section5Title}>
               Make <span style={styles.italic}>your mark</span> in the digital world.
             </h2>
-            <button style={styles.workWithUsBtn}>Work with us</button>
+            <button
+              style={styles.workWithUsBtn}
+              onClick={() => scrollToSection('section6')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#000'
+                e.currentTarget.style.color = '#fff'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = '#000'
+              }}
+            >
+              Work with us
+            </button>
           </div>
           <div style={styles.section5Right}>
             <Image
@@ -189,34 +202,34 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Section 6: Questions */}
-      <section style={styles.section6}>
+      {/* Section 6: Get Started */}
+      <section style={styles.section6} id="section6">
         <div style={styles.section6Content}>
           <div style={styles.section6Left}>
             <Image
               src="/images/8.png"
-              alt="Contact us"
+              alt="Join us"
               width={300}
               height={300}
               style={{ width: '100%', height: 'auto', maxWidth: '300px' }}
             />
           </div>
           <div style={styles.section6Right}>
-            <h2 style={styles.section6Title}>Questions?</h2>
+            <h2 style={styles.section6Title}>Ready to get started?</h2>
+            <p style={styles.section6Subtitle}>Choose an option below to begin your journey.</p>
 
-            <div style={styles.section6ContactBlock}>
-              <h3 style={styles.section6ContactTitle}>Phone</h3>
-              <p style={styles.section6ContactText}>(123) 456-7890</p>
-            </div>
+            <div style={styles.cardsContainer}>
+              <a href="/login" style={styles.card}>
+                <h3 style={styles.cardTitle}>Already a member?</h3>
+                <p style={styles.cardText}>Log in to your account and start managing your projects today.</p>
+                <button style={styles.cardBtn}>Login</button>
+              </a>
 
-            <div style={styles.section6ContactBlock}>
-              <h3 style={styles.section6ContactTitle}>Email</h3>
-              <p style={styles.section6ContactText}>hello@reallygreatsite.com</p>
-            </div>
-
-            <div style={styles.section6ContactBlock}>
-              <h3 style={styles.section6ContactTitle}>Social</h3>
-              <p style={styles.section6ContactText}>f x o</p>
+              <a href="/signup" style={styles.card}>
+                <h3 style={styles.cardTitle}>New here?</h3>
+                <p style={styles.cardText}>Create a new account and unlock the power of SprintOps.</p>
+                <button style={styles.cardBtn}>Sign Up</button>
+              </a>
             </div>
           </div>
         </div>
@@ -551,27 +564,67 @@ const styles = {
     fontFamily: '"Times New Roman", Times, serif',
     fontSize: '4rem',
     fontWeight: '400',
-    margin: '0 0 60px 0',
-    color: '#fff',
-    fontStyle: 'italic',
-  } as React.CSSProperties,
-
-  section6ContactBlock: {
-    marginBottom: '40px',
-  } as React.CSSProperties,
-
-  section6ContactTitle: {
-    fontFamily: 'Helvetica, Arial, sans-serif',
-    fontSize: '1.2rem',
-    fontWeight: 'bold',
     margin: '0 0 10px 0',
     color: '#fff',
   } as React.CSSProperties,
 
-  section6ContactText: {
+  section6Subtitle: {
     fontFamily: 'Helvetica, Arial, sans-serif',
-    fontSize: '1rem',
+    fontSize: '1.1rem',
+    color: '#fff',
+    margin: '0 0 40px 0',
+    lineHeight: '1.6',
+  } as React.CSSProperties,
+
+  cardsContainer: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '24px',
+  } as React.CSSProperties,
+
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    border: '2px solid #fff',
+    borderRadius: '16px',
+    padding: '32px 24px',
+    textDecoration: 'none',
+    color: '#fff',
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '16px',
+    cursor: 'pointer',
+  } as React.CSSProperties,
+
+  cardTitle: {
+    fontFamily: 'Helvetica, Arial, sans-serif',
+    fontSize: '1.4rem',
+    fontWeight: 'bold',
     margin: '0',
     color: '#fff',
+  } as React.CSSProperties,
+
+  cardText: {
+    fontFamily: 'Helvetica, Arial, sans-serif',
+    fontSize: '0.95rem',
+    margin: '0',
+    color: '#fff',
+    opacity: 0.9,
+    lineHeight: '1.5',
+  } as React.CSSProperties,
+
+  cardBtn: {
+    fontFamily: 'Helvetica, Arial, sans-serif',
+    padding: '10px 24px',
+    fontSize: '0.95rem',
+    fontWeight: 'bold',
+    border: '2px solid #fff',
+    backgroundColor: 'transparent',
+    color: '#fff',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    marginTop: 'auto',
+    width: 'fit-content',
   } as React.CSSProperties,
 }

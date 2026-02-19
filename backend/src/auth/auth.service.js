@@ -35,6 +35,7 @@ const login = async (email, password) => {
     algorithm: "HS256"
   });
 
+  console.log("token signed with secret: ",process.env.JWT_SECRET);
   return {
     token,
     user: {

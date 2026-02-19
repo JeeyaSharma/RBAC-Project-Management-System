@@ -11,7 +11,8 @@ const router = express.Router();
 router.post("/", authMiddleware, validate(createProjectSchema), projectController.createProject);
 
 // Get projects for logged-in user
-router.get("/my", authMiddleware, projectController.getMyProjects);
+router.get("/", authMiddleware, projectController.getMyProjects);
+// router.get("/my", authMiddleware, projectController.getMyProjects);
 
 // Add member to project (RBAC protected)
 router.post(

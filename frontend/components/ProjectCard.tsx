@@ -1,58 +1,33 @@
-import "../app/globals.css"
-
-
 type Project = {
-  id: number
-  name: string
-  status: string
-}
+  id: string;
+  name: string;
+  description: string | null;
+  role: string;
+  created_at: string;
+};
 
 type Props = {
-  project: Project
-  onDelete: (id: number) => void
-  onStatusChange: (id: number) => void
-}
+  project: Project;
+  onSelect: (id: string) => void;
+};
 
-export default function ProjectCard({ project, onDelete, onStatusChange }: Props) {
+export default function ProjectCard({ project, onSelect }: Props) {
   return (
-    <div className="card">
-      <div className="card-content">
-        <h3 style={{ fontSize: "18px", fontWeight: 600, color: "#111827" }}>
-          {project.name}
-        </h3>
-        <p>
-          <span className="status-label">Status:</span>{" "}
-          <span 
-            style={{
-              fontWeight: 600,
-              color:
-                project.status === "Completed"
-                  ? "green"
-                  : project.status === "In Progress"
-                  ? "orange"
-                  : "red",
-            }}
-          >
-            {project.status}
-          </span>
-        </p>
+    <div className="project-card card" onClick={() => onSelect(project.id)} style={{ cursor: "pointer" }}>
+      <div className="project-card-header">
+        <h3 className="project-name">{project.name}</h3>
+        <span className={`role-badge role-${project.role?.toLowerCase()}`}>
+          {project.role}
+        </span>
       </div>
-
-      {/* <div style={{ display: "flex", gap: "8px" }}> */}
-      <div className="card-actions">
-        <button
-          onClick={() => onStatusChange(project.id)}
-          className="button">
-          Next Status
-        </button>
-
-        <button
-          onClick={() => onDelete(project.id)}
-          className="button danger"
-        >
-          Delete
-        </button>
+      {project.description && (
+        <p className="project-desc">{project.description}</p>
+      )}
+      <div className="project-meta">
+        <span className="text-muted">
+          Created {new Date(project.created_at).toLocaleDateString()}
+        </span>
       </div>
     </div>
-  )
+  );
 }

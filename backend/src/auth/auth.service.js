@@ -41,7 +41,8 @@ const login = async (email, password) => {
     user: {
       id: user.id,
       name: user.name,
-      email: user.email
+      email: user.email,
+      publicId: user.public_id
     }
   };
 };
@@ -71,7 +72,8 @@ const signup = async (name, email, password) => {
   return {
     id: user.id,
     name: user.name,
-    email: user.email
+    email: user.email,
+    publicId: user.public_id
   };
 };
 

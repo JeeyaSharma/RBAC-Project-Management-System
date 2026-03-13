@@ -44,13 +44,13 @@ async function request<T>(
 // ---- Auth ----
 export const authApi = {
   login: (email: string, password: string) =>
-    request<{ data: { token: string; user: { id: string; name: string; email: string } } }>(
+    request<{ data: { token: string; user: { id: string; name: string; email: string; publicId?: string } } }>(
       "/auth/login",
       { method: "POST", body: JSON.stringify({ email, password }) }
     ),
 
   signup: (name: string, email: string, password: string) =>
-    request<{ data: { user: { id: string; name: string; email: string } } }>(
+    request<{ data: { user: { id: string; name: string; email: string; publicId?: string } } }>(
       "/auth/signup",
       { method: "POST", body: JSON.stringify({ name, email, password }) }
     ),
@@ -67,20 +67,25 @@ export const projectsApi = {
       { method: "POST", body: JSON.stringify({ name, description }) }
     ),
 
-  addMember: (projectId: string, userId: string, role: string) =>
+  addMember: (projectId: string, identifier: string, role: string) =>
     request<{ data: unknown }>(
       `/projects/${encodeURIComponent(projectId)}/members`,
-      { method: "POST", body: JSON.stringify({ userId, role }) }
+      { method: "POST", body: JSON.stringify({ identifier, role }) }
     ),
 };
 
 // ---- Sprints ----
 export const sprintsApi = {
+  getProjectSprints: (projectId: string) =>
+    request<{ data: unknown[] }>(
+      `/projects/${encodeURIComponent(projectId)}/sprints`
+    ),
+
   createSprint: (
     projectId: string,
     data: { name: string; startDate: string; endDate: string; goal?: string }
   ) =>
-    request<{ data: { sprint: unknown } }>(
+    request<{ data: unknown }>(
       `/projects/${encodeURIComponent(projectId)}/sprints`,
       { method: "POST", body: JSON.stringify(data) }
     ),
@@ -88,13 +93,13 @@ export const sprintsApi = {
   startSprint: (projectId: string, sprintId: string) =>
     request<{ data: unknown }>(
       `/projects/${encodeURIComponent(projectId)}/sprints/${encodeURIComponent(sprintId)}/start`,
-      { method: "PATCH" }
+      { method: "PATCH", body: JSON.stringify({}) }
     ),
 
   completeSprint: (projectId: string, sprintId: string) =>
     request<{ data: unknown }>(
       `/projects/${encodeURIComponent(projectId)}/sprints/${encodeURIComponent(sprintId)}/complete`,
-      { method: "PATCH" }
+      { method: "PATCH", body: JSON.stringify({}) }
     ),
 };
 
@@ -110,7 +115,7 @@ export const tasksApi = {
     if (params?.status) query.set("status", params.status);
     if (params?.assigneeId) query.set("assigneeId", params.assigneeId);
     const qs = query.toString();
-    return request<{ data: { tasks: unknown[]; pagination: unknown } }>(
+    return request<{ data: unknown[]; pagination: unknown }>(
       `/projects/${encodeURIComponent(projectId)}/tasks${qs ? `?${qs}` : ""}`
     );
   },
@@ -124,7 +129,7 @@ export const tasksApi = {
     if (params?.page) query.set("page", String(params.page));
     if (params?.limit) query.set("limit", String(params.limit));
     const qs = query.toString();
-    return request<{ data: { tasks: unknown[]; pagination: unknown } }>(
+    return request<{ data: unknown[]; pagination: unknown }>(
       `/projects/${encodeURIComponent(projectId)}/sprints/${encodeURIComponent(sprintId)}/tasks${qs ? `?${qs}` : ""}`
     );
   },
@@ -139,7 +144,7 @@ export const tasksApi = {
       description?: string;
       storyPoints?: number;
       sprintId?: string;
-      assigneeId?: string;
+      assigneeIdentifier?: string;
     }
   ) =>
     request<{ data: { task: unknown } }>(
@@ -154,7 +159,7 @@ export const tasksApi = {
       title?: string;
       description?: string;
       storyPoints?: number;
-      assigneeId?: string;
+      assigneeIdentifier?: string;
       sprintId?: string | null;
     }
   ) =>
@@ -166,7 +171,7 @@ export const tasksApi = {
   updateTaskStatus: (projectId: string, taskId: string, newStatus: string) =>
     request<{ data: { task: unknown } }>(
       `/projects/${encodeURIComponent(projectId)}/tasks/${encodeURIComponent(taskId)}/status`,
-      { method: "PATCH", body: JSON.stringify({ newStatus }) }
+      { method: "PATCH", body: JSON.stringify({ status: newStatus }) }
     ),
 };
 
@@ -185,4 +190,11 @@ export const analyticsApi = {
 
   getUserPerformanceAnalytics: (projectId: string) =>
     request<{ data: unknown }>(`/projects/${encodeURIComponent(projectId)}/analytics/users`),
+};
+
+export const usersApi = {
+  getMyProfile: () => request<{ data: unknown }>("/users/me/profile"),
+
+  searchUsers: (query: string) =>
+    request<{ data: unknown[] }>(`/users/search?q=${encodeURIComponent(query)}`),
 };

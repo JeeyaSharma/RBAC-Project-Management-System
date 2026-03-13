@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
 import { dashboardApi, analyticsApi } from "@/lib/api";
+import { toPublicUserId } from "@/lib/userId";
 
 type DashboardData = {
   project: { id: string; name: string; description: string | null; created_at: string };
@@ -11,12 +12,14 @@ type DashboardData = {
   activeSprint: { id: string; name: string; goal: string | null; start_date: string; end_date: string; status: string } | null;
   sprintAnalytics: { completionPercentage: number; totalTasks: number; completedTasks: number } | null;
   taskSummary: { total: number; todo: number; inProgress: number; done: number; blocked: number };
-  members: { user_id: string; role: string; name?: string }[];
-  recentActivity: { user_id: string; entity_type: string; entity_id: string; action: string; metadata: Record<string, unknown>; created_at: string }[];
+  members: { user_id: string; user_public_id?: string; role: string; name?: string }[];
+  recentActivity: { user_id: string; user_public_id?: string; user_name?: string; entity_type: string; entity_id: string; action: string; metadata: Record<string, unknown>; created_at: string }[];
 };
 
 type UserPerformance = {
   userId: string;
+  publicUserId?: string;
+  userName?: string;
   role: string;
   tasksAssigned: number;
   tasksCompleted: number;
@@ -145,8 +148,8 @@ export default function ProjectDashboardPage() {
                   <div key={m.user_id || i} className="member-row">
                     <div className="member-avatar">{(m.name || m.role || "?").charAt(0).toUpperCase()}</div>
                     <div className="member-info">
-                      <span className="member-name">{m.name || m.user_id}</span>
-                      <span className="member-role">{m.role}</span>
+                      <span className="member-name">{m.name || m.user_public_id || toPublicUserId(m.user_id)}</span>
+                      <span className="member-role">{m.role} {m.user_public_id || toPublicUserId(m.user_id)}</span>
                     </div>
                   </div>
                 ))}
@@ -177,7 +180,7 @@ export default function ProjectDashboardPage() {
                         <td>
                           <div className="table-user">
                             <div className="member-avatar">{u.role.charAt(0).toUpperCase()}</div>
-                            <span className="table-user-id">{u.userId.slice(0, 8)}...</span>
+                            <span className="table-user-id">{u.userName || u.publicUserId || toPublicUserId(u.userId)}</span>
                           </div>
                         </td>
                         <td><span className={`role-badge role-${u.role.toLowerCase()}`}>{u.role}</span></td>
@@ -206,7 +209,7 @@ export default function ProjectDashboardPage() {
                     <div className="activity-dot" />
                     <div className="activity-content">
                       <span>
-                        {a.action.toLowerCase().replace("_", " ")} a {a.entity_type.toLowerCase()}
+                        {(a.user_name || a.user_public_id || toPublicUserId(a.user_id))} {a.action.toLowerCase().replace("_", " ")} a {a.entity_type.toLowerCase()}
                       </span>
                       <span className="activity-time">
                         {new Date(a.created_at).toLocaleString()}

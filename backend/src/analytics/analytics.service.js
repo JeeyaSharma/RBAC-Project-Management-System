@@ -49,6 +49,8 @@ const getSprintAnalytics = async ({ projectId, sprintId, userId }) => {
     },
     userContribution: userContribution.map((u) => ({
       userId: u.user_id,
+      publicUserId: u.user_public_id,
+      userName: u.user_name,
       completedTasks: Number(u.completed_tasks),
       completedStoryPoints: Number(u.completed_story_points)
     }))

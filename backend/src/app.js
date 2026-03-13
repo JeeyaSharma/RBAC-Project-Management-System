@@ -9,6 +9,7 @@ const taskRoutes = require("./tasks/task.routes");
 const analyticsRoutes = require("./analytics/analytics.routes");
 const dashboardRoutes = require("./dashboard/dashboard.routes");
 const userAnalyticsRoutes = require("./analytics/user_analytics.routes");
+const userRoutes = require("./users/user.routes");
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use(taskRoutes);
 app.use(analyticsRoutes);
 app.use(dashboardRoutes);
 app.use(userAnalyticsRoutes);
+app.use("/users", userRoutes);
 
 // 404 handler (must be before error handler)
 app.use((req, res) => {

@@ -1,6 +1,26 @@
 const sprintService = require("./sprint.service");
 
 /**
+ * GET /projects/:projectId/sprints
+ */
+const getProjectSprints = async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+
+    const sprints = await sprintService.getProjectSprints({
+      projectId,
+      userId: req.user.id
+    });
+
+    return res.status(200).json({
+      data: sprints
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * POST /projects/:projectId/sprints
  */
 const createSprint = async (req, res, next) => {
@@ -68,6 +88,7 @@ const completeSprint = async (req, res, next) => {
 };
 
 module.exports = {
+  getProjectSprints,
   createSprint,
   startSprint,
   completeSprint

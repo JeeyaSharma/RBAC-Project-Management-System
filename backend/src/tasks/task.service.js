@@ -2,6 +2,7 @@ const pool = require("../config/db");
 const taskRepository = require("../repositories/task.repository");
 const projectRepository = require("../repositories/project.repository");
 const sprintRepository = require("../repositories/sprint.repository");
+const userRepository = require("../repositories/user.repository");
 const activityLogService = require("../logs/activityLog.service");
 const {
   ForbiddenError,
@@ -14,6 +15,27 @@ const {
   TASK_INVALID_TRANSITIONS
 } = require("../constants/taskStatus");
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const resolveUserIdentifier = async (identifier) => {
+  const normalized = String(identifier || "").trim();
+  if (!normalized) return null;
+
+  if (UUID_REGEX.test(normalized)) {
+    const user = await userRepository.findById(normalized);
+    return user ? user.id : null;
+  }
+
+  if (normalized.includes("@")) {
+    const user = await userRepository.findByEmail(normalized);
+    return user ? user.id : null;
+  }
+
+  const user = await userRepository.findByPublicId(normalized);
+  return user ? user.id : null;
+};
+
 /**
  * Create task (RBAC protected)
  */
@@ -24,7 +46,8 @@ const createTask = async ({
   description,
   storyPoints,
   sprintId,
-  assigneeId
+  assigneeId,
+  assigneeIdentifier
 }) => {
   // 1. Project must exist
   const project = await projectRepository.getProjectById(projectId);
@@ -61,6 +84,15 @@ const createTask = async ({
     }
   }
 
+  const resolvedAssigneeId =
+    assigneeIdentifier !== undefined
+      ? await resolveUserIdentifier(assigneeIdentifier)
+      : assigneeId || null;
+
+  if (assigneeIdentifier && !resolvedAssigneeId) {
+    throw new NotFoundError("Assignee not found");
+  }
+
   // 4. Create task
   const task = await taskRepository.createTask({
     projectId,
@@ -68,7 +100,7 @@ const createTask = async ({
     title,
     description,
     storyPoints,
-    assigneeId,
+    assigneeId: resolvedAssigneeId,
     createdBy: userId
   });
 
@@ -81,7 +113,7 @@ const createTask = async ({
     action: "CREATED",
     metadata: {
       sprintId,
-      assigneeId
+      assigneeId: resolvedAssigneeId
     }
   });
 
@@ -276,6 +308,7 @@ const updateTask = async ({
   description,
   storyPoints,
   assigneeId,
+  assigneeIdentifier,
   sprintId
 }) => {
   // 1. Fetch task
@@ -313,12 +346,20 @@ const updateTask = async ({
     }
   }
 
+  let resolvedAssigneeId = assigneeId;
+  if (assigneeIdentifier !== undefined) {
+    resolvedAssigneeId = await resolveUserIdentifier(assigneeIdentifier);
+    if (assigneeIdentifier && !resolvedAssigneeId) {
+      throw new NotFoundError("Assignee not found");
+    }
+  }
+
   // 4. Update task
   const updatedTask = await taskRepository.updateTask(taskId, {
     title,
     description,
     story_points: storyPoints,
-    assignee_id: assigneeId,
+    assignee_id: resolvedAssigneeId,
     sprint_id: sprintId
   });
 
@@ -337,7 +378,7 @@ const updateTask = async ({
       title,
       description,
       storyPoints,
-      assigneeId,
+      assigneeId: resolvedAssigneeId,
       sprintId
     }
   });

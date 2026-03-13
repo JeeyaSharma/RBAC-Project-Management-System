@@ -60,9 +60,15 @@ const getTaskSummary = async (projectId) => {
 const getProjectMembers = async (projectId) => {
   const result = await pool.query(
     `
-    SELECT user_id, role
-    FROM project_members
-    WHERE project_id = $1
+    SELECT
+      pm.user_id,
+      u.name,
+      ('USR-' || SUBSTRING(REPLACE(UPPER(u.id::text), '-', '') FROM 1 FOR 10)) AS user_public_id,
+      pm.role
+    FROM project_members pm
+    JOIN users u
+      ON u.id = pm.user_id
+    WHERE pm.project_id = $1
     `,
     [projectId]
   );
@@ -77,15 +83,19 @@ const getRecentActivity = async (projectId) => {
   const result = await pool.query(
     `
     SELECT
-      user_id,
-      entity_type,
-      entity_id,
-      action,
-      metadata,
-      created_at
-    FROM activity_logs
-    WHERE project_id = $1
-    ORDER BY created_at DESC
+      a.user_id,
+      u.name AS user_name,
+      ('USR-' || SUBSTRING(REPLACE(UPPER(u.id::text), '-', '') FROM 1 FOR 10)) AS user_public_id,
+      a.entity_type,
+      a.entity_id,
+      a.action,
+      a.metadata,
+      a.created_at
+    FROM activity_logs a
+    LEFT JOIN users u
+      ON u.id = a.user_id
+    WHERE a.project_id = $1
+    ORDER BY a.created_at DESC
     LIMIT 10
     `,
     [projectId]

@@ -11,7 +11,8 @@ const createTask = async (req, res, next) => {
       description,
       storyPoints,
       sprintId,
-      assigneeId
+      assigneeId,
+      assigneeIdentifier
     } = req.body;
 
     const task = await taskService.createTask({
@@ -21,7 +22,8 @@ const createTask = async (req, res, next) => {
       description,
       storyPoints,
       sprintId,
-      assigneeId
+      assigneeId,
+      assigneeIdentifier
     });
 
     return res.status(201).json({
@@ -38,13 +40,13 @@ const createTask = async (req, res, next) => {
 const updateTaskStatus = async (req, res, next) => {
   try {
     const { projectId, taskId } = req.params;
-    const { status } = req.body;
+    const { newStatus, status } = req.body;
 
     const updatedTask = await taskService.updateTaskStatus({
       projectId,
       taskId,
       userId: req.user.id,
-      newStatus: status
+      newStatus: newStatus || status
     });
 
     return res.status(200).json({
@@ -131,6 +133,7 @@ const updateTask = async (req, res, next) => {
       description,
       storyPoints,
       assigneeId,
+      assigneeIdentifier,
       sprintId
     } = req.body;
 
@@ -142,6 +145,7 @@ const updateTask = async (req, res, next) => {
       description,
       storyPoints,
       assigneeId,
+      assigneeIdentifier,
       sprintId
     });
 

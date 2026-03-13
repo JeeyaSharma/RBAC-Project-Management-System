@@ -29,6 +29,8 @@ const getUserPerformanceAnalytics = async ({ projectId, userId }) => {
 
   return taskMetrics.map((u) => ({
     userId: u.user_id,
+    publicUserId: u.user_public_id,
+    userName: u.user_name,
     role: u.role,
     tasksAssigned: Number(u.tasks_assigned),
     tasksCompleted: Number(u.tasks_completed),

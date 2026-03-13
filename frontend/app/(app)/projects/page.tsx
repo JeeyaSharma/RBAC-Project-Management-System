@@ -9,12 +9,13 @@ export default function ProjectsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [newMembers, setNewMembers] = useState<Array<{ identifier: string; role: string }>>([]);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // -- Add Member state --
   const [memberModal, setMemberModal] = useState<string | null>(null);
-  const [memberId, setMemberId] = useState("");
+  const [memberIdentifier, setMemberIdentifier] = useState("");
   const [memberRole, setMemberRole] = useState("DEVELOPER");
   const [memberError, setMemberError] = useState("");
   const [memberSubmitting, setMemberSubmitting] = useState(false);
@@ -24,9 +25,31 @@ export default function ProjectsPage() {
     setError("");
     setSubmitting(true);
     try {
-      await projectsApi.createProject(name, description || undefined);
+      const created = await projectsApi.createProject(name, description || undefined);
+      const createdProjectId = (created as { data?: { id?: string } })?.data?.id;
+
+      const membersToAdd = newMembers
+        .map((m) => ({ identifier: m.identifier.trim(), role: m.role }))
+        .filter((m) => m.identifier.length > 0);
+
+      if (createdProjectId && membersToAdd.length > 0) {
+        const results = await Promise.allSettled(
+          membersToAdd.map((m) =>
+            projectsApi.addMember(createdProjectId, m.identifier, m.role)
+          )
+        );
+
+        const failed = results.filter((r) => r.status === "rejected").length;
+        if (failed > 0) {
+          setError(
+            `Project created, but ${failed} of ${membersToAdd.length} members failed to add.`
+          );
+        }
+      }
+
       setName("");
       setDescription("");
+      setNewMembers([]);
       setShowCreate(false);
       await refreshProjects();
     } catch (err: unknown) {
@@ -42,9 +65,9 @@ export default function ProjectsPage() {
     setMemberError("");
     setMemberSubmitting(true);
     try {
-      await projectsApi.addMember(memberModal, memberId, memberRole);
+      await projectsApi.addMember(memberModal, memberIdentifier, memberRole);
       setMemberModal(null);
-      setMemberId("");
+      setMemberIdentifier("");
       setMemberRole("DEVELOPER");
       await refreshProjects();
     } catch (err: unknown) {
@@ -63,41 +86,7 @@ export default function ProjectsPage() {
         </button>
       </div>
 
-      {/* Create project form */}
-      {showCreate && (
-        <div className="card" style={{ marginBottom: "20px" }}>
-          <form onSubmit={handleCreate} className="create-form">
-            <h3 className="card-heading">Create New Project</h3>
-            {error && <div className="alert alert-error">{error}</div>}
-            <div className="form-group">
-              <label htmlFor="proj-name">Project Name</label>
-              <input
-                id="proj-name"
-                className="input"
-                placeholder="My Awesome Project"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                minLength={3}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="proj-desc">Description (optional)</label>
-              <textarea
-                id="proj-desc"
-                className="input textarea"
-                placeholder="What is this project about?"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-              />
-            </div>
-            <button type="submit" className="button" disabled={submitting}>
-              {submitting ? "Creating..." : "Create Project"}
-            </button>
-          </form>
-        </div>
-      )}
+      {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
 
       {/* Projects List */}
       {projects.length === 0 ? (
@@ -150,6 +139,119 @@ export default function ProjectsPage() {
         </div>
       )}
 
+      {/* Create Project Modal */}
+      {showCreate && (
+        <div className="modal-overlay" onClick={() => !submitting && setShowCreate(false)}>
+          <div className="modal" style={{ maxWidth: 640 }} onClick={(e) => e.stopPropagation()}>
+            <form onSubmit={handleCreate} className="create-form">
+              <h3 className="card-heading">Create New Project</h3>
+              {error && <div className="alert alert-error">{error}</div>}
+              <div className="form-group">
+                <label htmlFor="proj-name">Project Name</label>
+                <input
+                  id="proj-name"
+                  className="input"
+                  placeholder="My Awesome Project"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  minLength={3}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="proj-desc">Description (optional)</label>
+                <textarea
+                  id="proj-desc"
+                  className="input textarea"
+                  placeholder="What is this project about?"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="form-group">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <label>Add Members (optional)</label>
+                  <button
+                    type="button"
+                    className="button button-xs secondary"
+                    onClick={() =>
+                      setNewMembers((prev) => [...prev, { identifier: "", role: "DEVELOPER" }])
+                    }
+                  >
+                    + Member
+                  </button>
+                </div>
+
+                {newMembers.length === 0 && (
+                  <p className="text-muted">No members selected. You can add them now or later.</p>
+                )}
+
+                <div style={{ display: "grid", gap: 8 }}>
+                  {newMembers.map((member, index) => (
+                    <div key={index} className="form-row" style={{ alignItems: "center" }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <input
+                          className="input"
+                          placeholder="Public ID or email"
+                          value={member.identifier}
+                          onChange={(e) =>
+                            setNewMembers((prev) =>
+                              prev.map((m, i) =>
+                                i === index ? { ...m, identifier: e.target.value } : m
+                              )
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0, maxWidth: 180 }}>
+                        <select
+                          className="select"
+                          value={member.role}
+                          onChange={(e) =>
+                            setNewMembers((prev) =>
+                              prev.map((m, i) =>
+                                i === index ? { ...m, role: e.target.value } : m
+                              )
+                            )
+                          }
+                        >
+                          <option value="PROJECT_MANAGER">Project Manager</option>
+                          <option value="DEVELOPER">Developer</option>
+                          <option value="VIEWER">Viewer</option>
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        className="button button-xs secondary"
+                        onClick={() =>
+                          setNewMembers((prev) => prev.filter((_, i) => i !== index))
+                        }
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="button secondary"
+                  onClick={() => setShowCreate(false)}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="button" disabled={submitting}>
+                  {submitting ? "Creating..." : "Create Project"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Add Member Modal */}
       {memberModal && (
         <div className="modal-overlay" onClick={() => setMemberModal(null)}>
@@ -158,15 +260,16 @@ export default function ProjectsPage() {
             {memberError && <div className="alert alert-error">{memberError}</div>}
             <form onSubmit={handleAddMember} className="create-form">
               <div className="form-group">
-                <label htmlFor="member-id">User ID</label>
+                <label htmlFor="member-id">User Public ID or Email</label>
                 <input
                   id="member-id"
                   className="input"
-                  placeholder="Enter user UUID"
-                  value={memberId}
-                  onChange={(e) => setMemberId(e.target.value)}
+                  placeholder="Enter public ID or email"
+                  value={memberIdentifier}
+                  onChange={(e) => setMemberIdentifier(e.target.value)}
                   required
                 />
+                <p className="form-help">Use a short public ID like `USR-ABC1234DEF` or the user&apos;s email.</p>
               </div>
               <div className="form-group">
                 <label htmlFor="member-role">Role</label>

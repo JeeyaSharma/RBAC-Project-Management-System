@@ -7,6 +7,8 @@ const getUserTaskMetrics = async (projectId) => {
   const query = `
     SELECT
       pm.user_id,
+      u.name AS user_name,
+      ('USR-' || SUBSTRING(REPLACE(UPPER(u.id::text), '-', '') FROM 1 FOR 10)) AS user_public_id,
       pm.role,
       COUNT(t.id) FILTER (WHERE t.assignee_id = pm.user_id) AS tasks_assigned,
       COUNT(t.id) FILTER (
@@ -22,10 +24,12 @@ const getUserTaskMetrics = async (projectId) => {
         WHERE t.assignee_id = pm.user_id AND t.status = 'DONE'
       ), 0) AS story_points_completed
     FROM project_members pm
+    JOIN users u
+      ON u.id = pm.user_id
     LEFT JOIN tasks t
       ON t.project_id = pm.project_id
     WHERE pm.project_id = $1
-    GROUP BY pm.user_id, pm.role;
+    GROUP BY pm.user_id, u.id, u.name, pm.role;
   `;
 
   const result = await pool.query(query, [projectId]);

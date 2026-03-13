@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { tasksApi } from "@/lib/api";
+import { toPublicUserId } from "@/lib/userId";
 
 type Task = {
   id: string;
@@ -12,8 +13,10 @@ type Task = {
   story_points: number | null;
   assignee_id: string | null;
   assignee_name?: string;
+  assignee_public_id?: string;
   sprint_id: string | null;
   created_at: string;
+  updated_at?: string;
 };
 
 type Pagination = {
@@ -50,10 +53,14 @@ export default function TasksPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [storyPoints, setStoryPoints] = useState("");
-  const [assigneeId, setAssigneeId] = useState("");
+  const [assigneeIdentifier, setAssigneeIdentifier] = useState("");
   const [sprintId, setSprintId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [statusLoading, setStatusLoading] = useState<string | null>(null);
+
+  // Task details modal
+  const [detailTask, setDetailTask] = useState<Task | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   // Filters
   const [filterStatus, setFilterStatus] = useState("");
@@ -69,8 +76,8 @@ export default function TasksPage() {
         limit: 50,
         status: filterStatus || undefined,
       });
-      const data = res.data as { tasks: Task[]; pagination: Pagination };
-      setTasks(data.tasks || []);
+      const data = res as { data: Task[]; pagination: Pagination };
+      setTasks(Array.isArray(data.data) ? data.data : []);
       setPagination(data.pagination || null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load tasks");
@@ -97,13 +104,13 @@ export default function TasksPage() {
         title,
         description: description || undefined,
         storyPoints: storyPoints ? parseInt(storyPoints) : undefined,
-        assigneeId: assigneeId || undefined,
+        assigneeIdentifier: assigneeIdentifier || undefined,
         sprintId: sprintId || undefined,
       });
       setTitle("");
       setDescription("");
       setStoryPoints("");
-      setAssigneeId("");
+      setAssigneeIdentifier("");
       setSprintId("");
       setShowCreate(false);
       await fetchTasks();
@@ -124,6 +131,25 @@ export default function TasksPage() {
       setError(err instanceof Error ? err.message : "Failed to update status");
     } finally {
       setStatusLoading(null);
+    }
+  };
+
+  const openTaskDetails = async (taskId: string) => {
+    setDetailLoading(true);
+    setError("");
+    try {
+      const res = await tasksApi.getTaskById(taskId);
+      const payload = res as { data?: { task?: Task } | Task };
+      const task = (payload.data && "task" in payload.data ? payload.data.task : payload.data) as Task | undefined;
+      if (!task) {
+        throw new Error("Task details not found");
+      }
+      setDetailTask(task);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load task details");
+      setDetailTask(null);
+    } finally {
+      setDetailLoading(false);
     }
   };
 
@@ -153,9 +179,9 @@ export default function TasksPage() {
     <div>
       <div className="page-header">
         <h1 className="page-title">Tasks</h1>
-        <div className="page-header-actions">
+        <div className="page-header-actions task-header-actions">
           <select
-            className="select"
+            className="select task-control"
             value={selectedProjectId || ""}
             onChange={(e) => setSelectedProjectId(e.target.value)}
           >
@@ -164,7 +190,7 @@ export default function TasksPage() {
             ))}
           </select>
           <select
-            className="select"
+            className="select task-control"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >
@@ -197,77 +223,6 @@ export default function TasksPage() {
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      {/* Create Task Form */}
-      {showCreate && (
-        <div className="card" style={{ marginBottom: "20px" }}>
-          <form onSubmit={handleCreate} className="create-form">
-            <h3 className="card-heading">Create Task</h3>
-            <div className="form-row">
-              <div className="form-group" style={{ flex: 2 }}>
-                <label htmlFor="task-title">Title</label>
-                <input
-                  id="task-title"
-                  className="input"
-                  placeholder="Implement user login"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  minLength={3}
-                />
-              </div>
-              <div className="form-group" style={{ flex: 1 }}>
-                <label htmlFor="task-points">Story Points</label>
-                <input
-                  id="task-points"
-                  type="number"
-                  className="input"
-                  placeholder="5"
-                  min={1}
-                  value={storyPoints}
-                  onChange={(e) => setStoryPoints(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label htmlFor="task-desc">Description (optional)</label>
-              <textarea
-                id="task-desc"
-                className="input textarea"
-                placeholder="Describe the task..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={2}
-              />
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="task-assignee">Assignee ID (optional)</label>
-                <input
-                  id="task-assignee"
-                  className="input"
-                  placeholder="User UUID"
-                  value={assigneeId}
-                  onChange={(e) => setAssigneeId(e.target.value)}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="task-sprint">Sprint ID (optional)</label>
-                <input
-                  id="task-sprint"
-                  className="input"
-                  placeholder="Sprint UUID"
-                  value={sprintId}
-                  onChange={(e) => setSprintId(e.target.value)}
-                />
-              </div>
-            </div>
-            <button type="submit" className="button" disabled={submitting}>
-              {submitting ? "Creating..." : "Create Task"}
-            </button>
-          </form>
-        </div>
-      )}
-
       {loading && <div className="loading-inline"><div className="spinner" /></div>}
 
       {/* Board View */}
@@ -287,6 +242,7 @@ export default function TasksPage() {
                     <TaskCard
                       key={task.id}
                       task={task}
+                      onViewDetails={openTaskDetails}
                       onStatusChange={handleStatusChange}
                       getNextStatuses={getNextStatuses}
                       statusLoading={statusLoading}
@@ -337,9 +293,15 @@ export default function TasksPage() {
                         </span>
                       </td>
                       <td>{task.story_points || "—"}</td>
-                      <td>{task.assignee_name || "Unassigned"}</td>
+                      <td>{task.assignee_name || task.assignee_public_id || "Unassigned"}</td>
                       <td>
                         <div className="table-actions">
+                          <button
+                            className="button button-xs secondary"
+                            onClick={() => openTaskDetails(task.id)}
+                          >
+                            View Details
+                          </button>
                           {getNextStatuses(task.status).map((ns) => (
                             <button
                               key={ns}
@@ -383,17 +345,169 @@ export default function TasksPage() {
           )}
         </div>
       )}
+
+      {detailTask && (
+        <div className="modal-overlay" onClick={() => !detailLoading && setDetailTask(null)}>
+          <div className="modal" style={{ maxWidth: 720 }} onClick={(e) => e.stopPropagation()}>
+            <h3 className="card-heading">Task Details</h3>
+
+            {detailLoading ? (
+              <div className="loading-inline"><div className="spinner" /></div>
+            ) : (
+              <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
+                <div>
+                  <p className="text-muted">Title</p>
+                  <p>{detailTask.title}</p>
+                </div>
+                <div>
+                  <p className="text-muted">Description</p>
+                  <p>{detailTask.description || "No description"}</p>
+                </div>
+                <div className="form-row">
+                  <div>
+                    <p className="text-muted">Status</p>
+                    <span className={`status-badge ${STATUS_STYLES[detailTask.status] || "status-todo"}`}>
+                      {STATUS_LABELS[detailTask.status] || detailTask.status}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-muted">Story Points</p>
+                    <p>{detailTask.story_points ?? "-"}</p>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div>
+                    <p className="text-muted">Assignee</p>
+                    <p>
+                      {detailTask.assignee_name || detailTask.assignee_public_id || toPublicUserId(detailTask.assignee_id) || "Unassigned"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted">Sprint</p>
+                    <p>{detailTask.sprint_id || "Backlog"}</p>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div>
+                    <p className="text-muted">Created</p>
+                    <p>{detailTask.created_at ? new Date(detailTask.created_at).toLocaleString() : "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted">Last Updated</p>
+                    <p>{detailTask.updated_at ? new Date(detailTask.updated_at).toLocaleString() : "-"}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted">Task ID</p>
+                  <p style={{ fontSize: 12, color: "#6b7280", wordBreak: "break-all" }}>{detailTask.id}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="modal-actions" style={{ marginTop: 16 }}>
+              <button type="button" className="button secondary" onClick={() => setDetailTask(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Task Modal */}
+      {showCreate && (
+        <div className="modal-overlay" onClick={() => !submitting && setShowCreate(false)}>
+          <div className="modal" style={{ maxWidth: 760 }} onClick={(e) => e.stopPropagation()}>
+            <form onSubmit={handleCreate} className="create-form">
+              <h3 className="card-heading">Create Task</h3>
+              <div className="form-row">
+                <div className="form-group" style={{ flex: 2 }}>
+                  <label htmlFor="task-title">Title</label>
+                  <input
+                    id="task-title"
+                    className="input"
+                    placeholder="Implement user login"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                    minLength={3}
+                  />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label htmlFor="task-points">Story Points</label>
+                  <input
+                    id="task-points"
+                    type="number"
+                    className="input"
+                    placeholder="5"
+                    min={1}
+                    value={storyPoints}
+                    onChange={(e) => setStoryPoints(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="task-desc">Description (optional)</label>
+                <textarea
+                  id="task-desc"
+                  className="input textarea"
+                  placeholder="Describe the task..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={2}
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="task-assignee">Assignee (Public ID or email)</label>
+                  <input
+                    id="task-assignee"
+                    className="input"
+                    placeholder="USR-XXXXXXXXXX or email"
+                    value={assigneeIdentifier}
+                    onChange={(e) => setAssigneeIdentifier(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="task-sprint">Sprint ID (optional)</label>
+                  <input
+                    id="task-sprint"
+                    className="input"
+                    placeholder="Sprint UUID"
+                    value={sprintId}
+                    onChange={(e) => setSprintId(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="modal-actions" style={{ marginTop: 8 }}>
+                <button
+                  type="button"
+                  className="button secondary"
+                  onClick={() => setShowCreate(false)}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="button" disabled={submitting}>
+                  {submitting ? "Creating..." : "Create Task"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function TaskCard({
   task,
+  onViewDetails,
   onStatusChange,
   getNextStatuses,
   statusLoading,
 }: {
-  task: { id: string; title: string; description: string | null; status: string; story_points: number | null; assignee_name?: string };
+  task: { id: string; title: string; description: string | null; status: string; story_points: number | null; assignee_name?: string; assignee_public_id?: string; assignee_id?: string | null };
+  onViewDetails: (id: string) => void;
   onStatusChange: (id: string, status: string) => void;
   getNextStatuses: (status: string) => string[];
   statusLoading: string | null;
@@ -410,9 +524,17 @@ function TaskCard({
         {task.story_points && (
           <span className="story-points">{task.story_points} pts</span>
         )}
-        {task.assignee_name && (
-          <span className="assignee-tag">{task.assignee_name}</span>
+        {(task.assignee_name || task.assignee_public_id || task.assignee_id) && (
+          <span className="assignee-tag">{task.assignee_name || task.assignee_public_id || toPublicUserId(task.assignee_id)}</span>
         )}
+      </div>
+      <div className="kanban-card-actions" style={{ marginBottom: nextStatuses.length > 0 ? 8 : 0 }}>
+        <button
+          className="button button-xs secondary"
+          onClick={() => onViewDetails(task.id)}
+        >
+          View Details
+        </button>
       </div>
       {nextStatuses.length > 0 && (
         <div className="kanban-card-actions">

@@ -26,13 +26,17 @@ const getSprintTaskSummary = async (sprintId) => {
 const getSprintUserContribution = async (sprintId) => {
   const query = `
     SELECT
-      assignee_id AS user_id,
+      t.assignee_id AS user_id,
+      u.name AS user_name,
+      ('USR-' || SUBSTRING(REPLACE(UPPER(u.id::text), '-', '') FROM 1 FOR 10)) AS user_public_id,
       COUNT(*) FILTER (WHERE status = 'DONE') AS completed_tasks,
       COALESCE(SUM(story_points) FILTER (WHERE status = 'DONE'), 0) AS completed_story_points
-    FROM tasks
-    WHERE sprint_id = $1
-      AND assignee_id IS NOT NULL
-    GROUP BY assignee_id;
+    FROM tasks t
+    JOIN users u
+      ON u.id = t.assignee_id
+    WHERE t.sprint_id = $1
+      AND t.assignee_id IS NOT NULL
+    GROUP BY t.assignee_id, u.id, u.name;
   `;
 
   const result = await pool.query(query, [sprintId]);

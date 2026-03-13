@@ -70,6 +70,30 @@ const getSprintById = async (sprintId, client = pool) => {
 };
 
 /**
+ * Get all sprints for a project
+ */
+const getSprintsByProject = async (projectId, client = pool) => {
+  const query = `
+    SELECT
+      id,
+      project_id,
+      name,
+      goal,
+      start_date,
+      end_date,
+      status,
+      created_at,
+      updated_at
+    FROM sprints
+    WHERE project_id = $1
+    ORDER BY created_at DESC;
+  `;
+
+  const result = await client.query(query, [projectId]);
+  return result.rows;
+};
+
+/**
  * Update sprint status
  */
 const updateSprintStatus = async (
@@ -89,9 +113,26 @@ const updateSprintStatus = async (
   return result.rows[0] || null;
 };
 
+/**
+ * Move unfinished sprint tasks back to backlog
+ */
+const moveUnfinishedTasksToBacklog = async (sprintId, client = pool) => {
+  const query = `
+    UPDATE tasks
+    SET sprint_id = NULL,
+        updated_at = NOW()
+    WHERE sprint_id = $1
+      AND status <> 'DONE';
+  `;
+
+  await client.query(query, [sprintId]);
+};
+
 module.exports = {
   createSprint,
   hasActiveSprint,
   getSprintById,
-  updateSprintStatus
+  getSprintsByProject,
+  updateSprintStatus,
+  moveUnfinishedTasksToBacklog
 };

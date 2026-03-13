@@ -1,5 +1,6 @@
 const pool = require("../config/db");
 const projectRepository = require("../repositories/project.repository");
+const userRepository = require("../repositories/user.repository");
 const activityLogService = require("../logs/activityLog.service");
 const {
   ForbiddenError,
@@ -64,7 +65,7 @@ const getMyProjects = async (userId) => {
 const addProjectMember = async ({
   projectId,
   requesterId,
-  newUserId,
+  newUserIdentifier,
   role
 }) => {
   const client = await pool.connect();
@@ -91,6 +92,23 @@ const addProjectMember = async ({
     ) {
       throw new ForbiddenError("You do not have permission to add members");
     }
+
+    const normalizedIdentifier = String(newUserIdentifier || "").trim();
+    let targetUser = null;
+
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizedIdentifier)) {
+      targetUser = await userRepository.findById(normalizedIdentifier);
+    } else if (normalizedIdentifier.includes("@")) {
+      targetUser = await userRepository.findByEmail(normalizedIdentifier);
+    } else {
+      targetUser = await userRepository.findByPublicId(normalizedIdentifier);
+    }
+
+    if (!targetUser) {
+      throw new NotFoundError("User not found");
+    }
+
+    const newUserId = targetUser.id;
 
     // 3. Prevent duplicate membership
     const existingMembership =

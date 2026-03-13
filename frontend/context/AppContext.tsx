@@ -10,7 +10,7 @@ import {
 } from "react";
 import { authApi, projectsApi } from "@/lib/api";
 
-type User = { id: string; name: string; email: string };
+type User = { id: string; name: string; email: string; publicId?: string };
 
 type Project = {
   id: string;

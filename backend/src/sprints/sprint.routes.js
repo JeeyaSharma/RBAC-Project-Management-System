@@ -6,6 +6,13 @@ const {createSprintSchema,startSprintSchema,completeSprintSchema} = require("../
 
 const router = express.Router();
 
+// Get sprints under project
+router.get(
+  "/projects/:projectId/sprints",
+  authMiddleware,
+  sprintController.getProjectSprints
+);
+
 // Create sprint under project
 router.post(
   "/projects/:projectId/sprints",

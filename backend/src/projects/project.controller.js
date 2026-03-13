@@ -42,12 +42,12 @@ const getMyProjects = async (req, res, next) => {
 const addProjectMember = async (req, res, next) => {
   try {
     const { projectId } = req.params;
-    const { userId, role } = req.body;
+    const { identifier, role } = req.body;
 
     await projectService.addProjectMember({
       projectId,
       requesterId: req.user.id,
-      newUserId: userId,
+      newUserIdentifier: identifier,
       role
     });
 

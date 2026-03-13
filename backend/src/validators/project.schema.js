@@ -7,14 +7,8 @@ const createProjectSchema = z.object({
 });
 
 const addProjectMemberSchema = z.object({
-  userId: z.string().uuid("Invalid userId"),
-//   role: z.enum([
-//     "OWNER",
-//     "PROJECT_MANAGER",
-//     "DEVELOPER",
-//     "VIEWER"
-//   ])
-    role: z.enum(PROJECT_ROLES_ARRAY)
+  identifier: z.string().min(3, "Enter a public ID or email"),
+  role: z.enum(PROJECT_ROLES_ARRAY)
 });
 
 module.exports = {

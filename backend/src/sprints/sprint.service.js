@@ -182,6 +182,9 @@ const completeSprint = async ({ projectId, sprintId, userId }) => {
       );
     }
 
+    // Return unfinished tasks to backlog when sprint closes.
+    await sprintRepository.moveUnfinishedTasksToBacklog(sprintId, client);
+
     const updated = await sprintRepository.updateSprintStatus(
       sprintId,
       "COMPLETED",
@@ -206,7 +209,22 @@ const completeSprint = async ({ projectId, sprintId, userId }) => {
   }
 };
 
+/**
+ * Get all sprints for a project
+ */
+const getProjectSprints = async ({ projectId, userId }) => {
+  const membership =
+    await projectRepository.getUserRoleInProject(projectId, userId);
+
+  if (!membership) {
+    throw new ForbiddenError("Access denied");
+  }
+
+  return sprintRepository.getSprintsByProject(projectId);
+};
+
 module.exports = {
+  getProjectSprints,
   createSprint,
   startSprint,
   completeSprint

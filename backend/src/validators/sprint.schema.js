@@ -14,10 +14,10 @@ const createSprintSchema = z.object({
 );
 
 // Start Sprint (no body needed, but keep schema explicit)
-const startSprintSchema = z.object({});
+const startSprintSchema = z.object({}).optional().transform(() => ({}));
 
 // Complete Sprint
-const completeSprintSchema = z.object({});
+const completeSprintSchema = z.object({}).optional().transform(() => ({}));
 
 module.exports = {
   createSprintSchema,

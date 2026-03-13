@@ -76,19 +76,23 @@ const getTaskById = async (taskId, client = pool) => {
 const getTaskDetailById = async (taskId) => {
   const query = `
     SELECT
-      id,
-      project_id,
-      sprint_id,
-      title,
-      description,
-      status,
-      story_points,
-      assignee_id,
-      created_by,
-      created_at,
-      updated_at
-    FROM tasks
-    WHERE id = $1;
+      t.id,
+      t.project_id,
+      t.sprint_id,
+      t.title,
+      t.description,
+      t.status,
+      t.story_points,
+      t.assignee_id,
+      u.name AS assignee_name,
+      ('USR-' || SUBSTRING(REPLACE(UPPER(u.id::text), '-', '') FROM 1 FOR 10)) AS assignee_public_id,
+      t.created_by,
+      t.created_at,
+      t.updated_at
+    FROM tasks t
+    LEFT JOIN users u
+      ON u.id = t.assignee_id
+    WHERE t.id = $1;
   `;
 
   const result = await pool.query(query, [taskId]);
@@ -189,15 +193,19 @@ const getTasksByProject = async ({
 
   const dataQuery = `
     SELECT
-      id,
-      project_id,
-      sprint_id,
-      title,
-      status,
-      assignee_id,
-      created_at
-    ${baseQuery}
-    ORDER BY created_at DESC
+      t.id,
+      t.project_id,
+      t.sprint_id,
+      t.title,
+      t.description,
+      t.status,
+      t.story_points,
+      t.assignee_id,
+      u.name AS assignee_name,
+      ('USR-' || SUBSTRING(REPLACE(UPPER(u.id::text), '-', '') FROM 1 FOR 10)) AS assignee_public_id,
+      t.created_at
+    ${baseQuery.replace("FROM tasks", "FROM tasks t LEFT JOIN users u ON u.id = t.assignee_id")}
+    ORDER BY t.created_at DESC
     LIMIT $${idx++} OFFSET $${idx};
   `;
 
@@ -237,16 +245,22 @@ const getTasksBySprint = async ({
 }) => {
   const dataQuery = `
     SELECT
-      id,
-      project_id,
-      sprint_id,
-      title,
-      status,
-      assignee_id,
-      created_at
-    FROM tasks
-    WHERE sprint_id = $1
-    ORDER BY created_at DESC
+      t.id,
+      t.project_id,
+      t.sprint_id,
+      t.title,
+      t.description,
+      t.status,
+      t.story_points,
+      t.assignee_id,
+      u.name AS assignee_name,
+      ('USR-' || SUBSTRING(REPLACE(UPPER(u.id::text), '-', '') FROM 1 FOR 10)) AS assignee_public_id,
+      t.created_at
+    FROM tasks t
+    LEFT JOIN users u
+      ON u.id = t.assignee_id
+    WHERE t.sprint_id = $1
+    ORDER BY t.created_at DESC
     LIMIT $2 OFFSET $3;
   `;
 
